@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	version="2.5">
+	<welcome-file-list>
+		<welcome-file>index.html</welcome-file>
+	</welcome-file-list>
+
+	<servlet>
+		<servlet-name>ConnectServlet</servlet-name>
+		<servlet-class>com.graduation_project.jam_square.server.ConnectServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>ConnectServlet</servlet-name>
+		<url-pattern>/connect</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>EventServlet</servlet-name>
+		<servlet-class>com.graduation_project.jam_square.server.EventServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>EventServlet</servlet-name>
+		<url-pattern>/eventupdate</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>OnConnectHandler</servlet-name>
+		<servlet-class>com.graduation_project.jam_square.server.handlers.OnConnectServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>OnConnectHandler</servlet-name>
+		<url-pattern>/_ah/channel/connected/</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>OnDisconnectHandler</servlet-name>
+		<servlet-class>com.graduation_project.jam_square.server.handlers.OnDisconnectServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>OnDisconnectHandler</servlet-name>
+		<url-pattern>/_ah/channel/disconnected/</url-pattern>
+	</servlet-mapping>
+
+</web-app>
