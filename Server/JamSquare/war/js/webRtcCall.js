@@ -1,43 +1,69 @@
 // Copyright (c) 2015 Jam^2 project authors. All Rights Reserved.
 
-var signalingChannel = createSignalingChannel();
+var signalingChannel;
 var pc;
 
-// Create new Signaling Channel "webSocketChannel"
-function createSignalingChannel() {
-	return new WebSocket("/ClientController");
+function connectToQuadCopter() {
+  var id = document.getElementById('id').value;
+  
+	$.get('/connect?id=' + id, function(data) {
+		console.log(data);
+		channel = new goog.appengine.Channel(data);
+
+		signalingChannel = channel.open();
+
+    signalingChannel.onopen = onOpen;
+    signalingChannel.onmessage = onMessage;
+    signalingChannel.onerror = onError;
+    signalingChannel.onclose = onClose;
+	});
 };
 
-signalingChannel.onopen = function() {
-	signalingChannel.send(JSON.stringify({
-		"type" : "join",
-		"id" : "jamSquare"
-	}));
+function onOpen () {
+  console.log('Opened...');
+  // TODO(houssainy) Implement this
+
+  // signalingChannel.send(JSON.stringify({
+  //   "type" : "join",
+  //   "id" : "jamSquare"
+  // }));
 };
 
-signalingChannel.onmessage = function(evt) {
-	if (!pc)
-		createPeerConnection();
+function onMessage (evt) {
+  // TODO(houssainy) Implement this
+  if (!pc)
+    createPeerConnection();
 
-	var signal = JSON.parse(evt.data);
-	if (signal.type == "offer")
-		createAnswer(signal);
-	else if(signal.type == "candidate")
-		pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
-	
-	function createAnswer(signal) {
-		pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
-		pc.answer(function(desc) {
-			console.log("Offer Created.");
-			pc.setLocalDescription(desc);
+  var signal = JSON.parse(evt.data);
+  if (signal.type == "offer")
+    createAnswer(signal);
+  else if(signal.type == "candidate")
+    pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+  // TODO(houssainy) stream
+  
+  function createAnswer(signal) {
+    pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+    pc.answer(function(desc) {
+      console.log("Offer Created.");
+      pc.setLocalDescription(desc);
 
-			var sdpData = {
-				"type" : "answer",
-				"sdp" : desc
-			};
-			signalingChannel.send(JSON.stringify(sdpData));
-		});
-	};
+      var sdpData = {
+        "type" : "answer",
+        "sdp" : desc
+      };
+      signalingChannel.send(JSON.stringify(sdpData));
+    });
+  };
+};
+
+function onError () {
+  // TODO(houssainy) Implement this
+  console.log("Error!");
+};
+
+function onClose () {
+  // TODO(houssainy) Implement this
+  console.log("Closed.");
 };
 
 //Create new peerConnection to be used to establish call with other peer.

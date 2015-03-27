@@ -1,0 +1,23 @@
+<html>
+<head>
+  <script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+  <script type="text/javascript" src="/_ah/channel/jsapi"></script>
+  <script type="text/javascript" src="js/webRtcCall.js"></script> 
+</head>
+  <body background="quad.jpg">
+    <h1>Control Station</h1>
+
+      <br>
+      <br>
+      User ID:<br>
+      <input type="text" id="id" value="Client">
+      <button onclick='connectToQuadCopter()'>Connect To QuadCopter</button>
+
+      <video id="remoteView" autoplay="true" muted="false"></video>
+      <button>Up</button>
+      <button>Down</button>
+      <button>Left</button>
+      <button>Right</button>
+  </body>
+</html>
