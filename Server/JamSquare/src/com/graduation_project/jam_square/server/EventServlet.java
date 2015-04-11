@@ -48,33 +48,38 @@ public class EventServlet extends HttpServlet {
 
 		Gson gson = new Gson();
 		@SuppressWarnings("unchecked")
-		HashMap<String, String> dataMap = gson.fromJson(sb.toString(),
+		HashMap<String, Object> dataMap = gson.fromJson(sb.toString(),
 				HashMap.class);
 
-		String peerId = dataMap.get("id");
+		String peerId = dataMap.get("id").toString();
 		if (peerId == null) {
 			sendResponse(resp, "<h1>Missing User Id!</h1>");
 			return;
 		}
 
-		String type = dataMap.get(Util.TYPE);
-		String data = dataMap.get(Util.DATA);
+		String type = dataMap.get(Util.TYPE).toString();
+		Object data = dataMap.get(Util.DATA);
+
+		if (data == null) {
+			sendResponse(resp, "ERROR");
+			return;
+		}
+
+		System.out.println("Message Received:\n" + dataMap);
 
 		PeerManager pm = PeerManager.get();
 		switch (type) {
-		case Util.ONOFFER:
+		case Util.OFFER:
 			onOffer(data, pm, peerId);
 			break;
-		case Util.ONANSWER:
+		case Util.ANSWER:
 			onAnswer(data, pm, peerId);
 			break;
-		case Util.ONICECANDIDATE:
+		case Util.ICECANDIDATE:
 			onIceCandidate(data, pm, peerId);
 			break;
-		case Util.ONADDSTREAM:
-			onAddStream(data, pm, peerId);
-			break;
 		}
+		sendResponse(resp, "OK");
 	}
 
 	/**
@@ -85,14 +90,20 @@ public class EventServlet extends HttpServlet {
 	 * @param pm
 	 * @param peerId
 	 */
-	private void onOffer(String offer, PeerManager pm, String peerId) {
+	private void onOffer(Object offer, PeerManager pm, String peerId) {
 		if (peerId.equals(Util.QUADCOPTER_ID)) {
-			if (pm.getClientPeer() != null)
-				sendDataThroughChannelTo(pm.getClientPeer(), offer);
+			pm.getQuadCopterPeer().setOffer(offer);
 
-		} else {
+			if (pm.getClientPeer() != null)
+				sendDataThroughChannelTo(pm.getClientPeer(), offer, Util.OFFER);
+
+		} else if (pm.getClientPeer() != null
+				&& pm.getClientPeer().getId().equals(peerId)) {
+
+			pm.getClientPeer().setOffer(offer);
 			if (pm.getQuadCopterPeer() != null)
-				sendDataThroughChannelTo(pm.getQuadCopterPeer(), offer);
+				sendDataThroughChannelTo(pm.getQuadCopterPeer(), offer,
+						Util.OFFER);
 		}
 	}
 
@@ -104,13 +115,17 @@ public class EventServlet extends HttpServlet {
 	 * @param pm
 	 * @param peerId
 	 */
-	private void onAnswer(String answer, PeerManager pm, String peerId) {
+	private void onAnswer(Object answer, PeerManager pm, String peerId) {
 		if (peerId.equals(Util.QUADCOPTER_ID)) {
 			if (pm.getClientPeer() != null)
-				sendDataThroughChannelTo(pm.getClientPeer(), answer);
-		} else {
+				sendDataThroughChannelTo(pm.getClientPeer(), answer,
+						Util.ANSWER);
+		} else if (pm.getClientPeer() != null
+				&& pm.getClientPeer().getId().equals(peerId)) {
+
 			if (pm.getQuadCopterPeer() != null)
-				sendDataThroughChannelTo(pm.getQuadCopterPeer(), answer);
+				sendDataThroughChannelTo(pm.getQuadCopterPeer(), answer,
+						Util.ANSWER);
 
 		}
 	}
@@ -121,40 +136,33 @@ public class EventServlet extends HttpServlet {
 	 * @param pm
 	 * @param peerId
 	 */
-	private void onIceCandidate(String iceCandidate, PeerManager pm,
+	private void onIceCandidate(Object iceCandidate, PeerManager pm,
 			String peerId) {
 		if (peerId.equals(Util.QUADCOPTER_ID)) {
 			pm.getQuadCopterPeer().addIceCandidate(iceCandidate);
 			if (pm.getClientPeer() != null)
-				sendDataThroughChannelTo(pm.getClientPeer(), iceCandidate);
-		} else {
+				sendDataThroughChannelTo(pm.getClientPeer(), iceCandidate,
+						Util.ICECANDIDATE);
+		} else if (pm.getClientPeer() != null
+				&& pm.getClientPeer().getId().equals(peerId)) {
 			pm.getClientPeer().addIceCandidate(iceCandidate);
 			if (pm.getQuadCopterPeer() != null)
-				sendDataThroughChannelTo(pm.getQuadCopterPeer(), iceCandidate);
+				sendDataThroughChannelTo(pm.getQuadCopterPeer(), iceCandidate,
+						Util.ICECANDIDATE);
 		}
 	}
 
-	/**
-	 * 
-	 * @param stream
-	 * @param pm
-	 * @param peerId
-	 */
-	private void onAddStream(String stream, PeerManager pm, String peerId) {
-		if (peerId.equals(Util.QUADCOPTER_ID)) {
-			if (pm.getClientPeer() != null)
-				sendDataThroughChannelTo(pm.getClientPeer(), stream);
-		} else {
-			if (pm.getQuadCopterPeer() != null)
-				sendDataThroughChannelTo(pm.getQuadCopterPeer(), stream);
-		}
-	}
-
-	private void sendDataThroughChannelTo(Peer peer, String data) {
+	private void sendDataThroughChannelTo(Peer peer, Object data, String type) {
 		ChannelService channelService = ChannelServiceFactory
 				.getChannelService();
 		String channelKey = peer.getId();
-		ChannelMessage msg = new ChannelMessage(channelKey, data);
+
+		HashMap<String, Object> mapData = new HashMap<String, Object>();
+		mapData.put("type", type);
+		mapData.put("data", data);
+
+		ChannelMessage msg = new ChannelMessage(channelKey,
+				new Gson().toJson(mapData));
 		channelService.sendMessage(msg);
 	}
 

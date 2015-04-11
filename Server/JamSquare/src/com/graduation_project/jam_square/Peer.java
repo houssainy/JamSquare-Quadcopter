@@ -4,40 +4,31 @@ import java.util.ArrayList;
 
 public class Peer {
 	private String id;
-	private ArrayList<String> iceCandidates;
-	private String stream;
-	private String offer;
+	private ArrayList<Object> iceCandidates;
+	private Object offer;
 
 	public Peer(String id) {
 		this.id = id;
-		this.iceCandidates = new ArrayList<String>();
+		this.iceCandidates = new ArrayList<Object>();
 	}
 
-	public void addIceCandidate(String iceCandidate) {
+	public void addIceCandidate(Object iceCandidate) {
 		iceCandidates.add(iceCandidate);
 	}
 
-	public ArrayList<String> getIceCandidates() {
+	public ArrayList<Object> getIceCandidates() {
 		return iceCandidates;
-	}
-
-	public void addStream(String stream) {
-		this.stream = stream;
-	}
-
-	public String getStream() {
-		return stream;
 	}
 
 	public String getId() {
 		return id;
 	}
 
-	public String getOffer() {
+	public Object getOffer() {
 		return offer;
 	}
 
-	public void setOffer(String offer) {
+	public void setOffer(Object offer) {
 		this.offer = offer;
 	}
 }

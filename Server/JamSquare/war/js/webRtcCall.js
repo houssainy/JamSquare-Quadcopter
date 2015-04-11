@@ -1,75 +1,86 @@
 // Copyright (c) 2015 Jam^2 project authors. All Rights Reserved.
 
 var signalingChannel;
+var id;
 var pc;
 
-function connectToQuadCopter() {
-  var id = document.getElementById('id').value;
-  
+// TODO(houssainy) uncomment this method
+// $(document).ready(function() {
+//     connectToSignallingServer('chromeClient');
+// });
+
+function connectToSignallingServer(callBack) {
+  if(!id)
+    id = document.getElementById('id').value;
 	$.get('/connect?id=' + id, function(data) {
-		console.log(data);
 		channel = new goog.appengine.Channel(data);
 
 		signalingChannel = channel.open();
 
-    signalingChannel.onopen = onOpen;
+    // TODO
+    signalingChannel.onopen = onOpen.bind(this, callBack);
     signalingChannel.onmessage = onMessage;
     signalingChannel.onerror = onError;
     signalingChannel.onclose = onClose;
+
+    signalingChannel.send = send;
 	});
 };
 
-function onOpen () {
-  console.log('Opened...');
-  // TODO(houssainy) Implement this
-
-  // signalingChannel.send(JSON.stringify({
-  //   "type" : "join",
-  //   "id" : "jamSquare"
-  // }));
+function onOpen (callBack) {
+  if(callBack)
+    callBack();
+  console.log('Connection opened...');
+  document.getElementById('status').innerHTML = 'Connected'
 };
 
-function onMessage (evt) {
-  // TODO(houssainy) Implement this
+function send(data) {
+  $.post("/eventupdate", data, function(resp) {
+    console.log("Response: " + resp);
+  });
+}
+
+function onMessage (signal) {
   if (!pc)
     createPeerConnection();
 
-  var signal = JSON.parse(evt.data);
-  if (signal.type == "offer")
-    createAnswer(signal);
-  else if(signal.type == "candidate")
-    pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
-  // TODO(houssainy) stream
+  msg = JSON.parse(signal.data);
+  if (msg.type == "offer") {
+    pc.setRemoteDescription(new RTCSessionDescription(msg.data));
+    pc.createAnswer(gotAnswer);
+  } else if (msg.type == "answer") {
+    pc.setRemoteDescription(new RTCSessionDescription(msg.data));
+  } else if(msg.type == "candidate") { // Candidate
+    pc.addIceCandidate(new RTCIceCandidate(msg.data));
+  }
   
-  function createAnswer(signal) {
-    pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
-    pc.answer(function(desc) {
-      console.log("Offer Created.");
-      pc.setLocalDescription(desc);
+  function gotAnswer(desc) {
+    console.log("Answer Created.");
+    pc.setLocalDescription(desc);
 
-      var sdpData = {
-        "type" : "answer",
-        "sdp" : desc
-      };
-      signalingChannel.send(JSON.stringify(sdpData));
-    });
+    var sdpData = {
+      "type" : "answer",
+      "id" : id,
+      "data" : desc
+    };
+    signalingChannel.send(JSON.stringify(sdpData));
   };
 };
 
 function onError () {
-  // TODO(houssainy) Implement this
-  console.log("Error!");
+  console.log("Something went wrong!");
 };
 
 function onClose () {
-  // TODO(houssainy) Implement this
-  console.log("Closed.");
+  console.log("Connection To Server Closed...");
 };
 
-//Create new peerConnection to be used to establish call with other peer.
-//Signaling is done through Google App Engine server
-//"https://jam-square.appspot.com/".
+// Create new peerConnection to be used to establish call with other peer.
+// Signaling is done through Google App Engine server
+// "https://jam-square.appspot.com/".
 function createPeerConnection() {
+  console.log('Creating peer connection ...');
+
 	pc = new webkitRTCPeerConnection(null, {
 		optional : [ {
 			RtpDataChannels : true
@@ -78,15 +89,19 @@ function createPeerConnection() {
 
 	// send any ice candidates to the other peer
 	pc.onicecandidate = function(event) {
+    if(event.candidate == null)
+      return;
 		var candidateData = {
 			"type" : "candidate",
-			"candidate" : event.candidate
+      "id" : id,
+			"data" : event.candidate
 		};
 		signalingChannel.send(JSON.stringify(candidateData));
 	};
 
 	// once remote stream arrives, show it in the remote video element
 	pc.onaddstream = function(event) {
+    console.log('New Stream!');
 		var remoteView = document.getElementById("remoteView");
 		remoteView.src = URL.createObjectURL(event.stream);
 	};
@@ -96,3 +111,45 @@ function createPeerConnection() {
 		// TODO(houssainy) implement this method to get TURN surver for relaying
 	};
 };
+
+// TODO(houssainy) removce this test method
+function createTestOffer () {
+  id = '__quadcopter1992';
+  connectToSignallingServer(function() {
+    createPeerConnection();
+
+    navigator.webkitGetUserMedia({video:true, audio:true},
+        onUserMediaSuccess, failed);
+
+    function onUserMediaSuccess(stream) {
+      console.log("User has granted access to local media.");
+
+      pc.addStream(stream);
+
+      var remoteView = document.getElementById("remoteView");
+      remoteView.src = URL.createObjectURL(stream);
+
+      pc.createOffer(gotOffer, failed);
+
+      function gotOffer(offer) {
+        console.log("Offer Created");
+        pc.setLocalDescription(offer, onSetSessionDescriptionSuccess, failed);
+
+        var sdpData = {
+          "type" : "offer",
+          "id" : id,
+          "data" : offer
+        };
+        signalingChannel.send(JSON.stringify(sdpData));
+      }
+
+      function onSetSessionDescriptionSuccess() {
+        console.log("Set session description success.");
+      }
+    }
+
+    function failed() {
+      console.log('Failed!');
+    }
+  });
+}

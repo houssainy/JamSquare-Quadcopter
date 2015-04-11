@@ -8,16 +8,19 @@
   <body background="quad.jpg">
     <h1>Control Station</h1>
 
+    <h2 id='status'> Not Connected </h2>
       <br>
       <br>
       User ID:<br>
       <input type="text" id="id" value="Client">
-      <button onclick='connectToQuadCopter()'>Connect To QuadCopter</button>
+      <button onclick='connectToSignallingServer(null)'>Connect To QuadCopter</button>
 
       <video id="remoteView" autoplay="true" muted="false"></video>
       <button>Up</button>
       <button>Down</button>
       <button>Left</button>
       <button>Right</button>
+
+      <button onclick='createTestOffer()'>Create Test Offer</button>
   </body>
 </html>
