@@ -8,6 +8,8 @@ import com.alexu.csed.jamsquare.PeerConnectionClient.PeerConnectionEvents;
 import com.alexu.csed.jamsquare.PeerConnectionClient.PeerConnectionParameters;
 import com.alexu.csed.jamsquare.connection.JamSquareClient;
 import com.alexu.csed.jamsquare.connection.JamSquareClient.SignalingEvents;
+import com.alexu.csed.jamsquare.connection.JamSquareClient.SignalingParameters;
+import com.alexu.csed.jamsquare.util.LooperExecutor;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -33,7 +35,6 @@ public class CallActivity extends Activity {
 	public static final String EXTRA_AUDIOCODEC = "com.alexu.csed.AUDIOCODEC";
 	public static final String EXTRA_CPUOVERUSE_DETECTION = "com.alexu.csed.CPUOVERUSE_DETECTION";
 	public static final String EXTRA_DISPLAY_HUD = "com.alexu.csed.DISPLAY_HUD";
-	public static final String SIGNALING_ID = "com.alexu.csed.SIGNALING_ID";
 
 	private SignalingParameters signalingParameters;
 	private PeerConnectionParameters peerConnectionParameters;
@@ -48,10 +49,6 @@ public class CallActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-		signalingParameters = null;
-
-		createPeerConnectionFactory();
 
 		final Intent intent = getIntent();
 		peerConnectionParameters = new PeerConnectionParameters(
@@ -69,8 +66,10 @@ public class CallActivity extends Activity {
 
 		// Create connection client.
 		jamSquareClient = new JamSquareClient(signalingEventsListner,
-				intent.getStringExtra(SIGNALING_ID));
+				new LooperExecutor());
+		signalingParameters = jamSquareClient.getSignalingParameters();
 
+//		createPeerConnectionFactory();
 		startCall();
 	}
 
@@ -154,7 +153,7 @@ public class CallActivity extends Activity {
 	// Disconnect from remote resources, dispose of local resources, and exit.
 	private void disconnect() {
 		if (jamSquareClient != null) {
-			jamSquareClient.disconnectFromServer();
+			jamSquareClient.disconnectFromSignalingServer();
 			jamSquareClient = null;
 		}
 		if (peerConnectionClient != null) {
@@ -219,21 +218,6 @@ public class CallActivity extends Activity {
 			// Create offer. Offer SDP will be sent to answering client in
 			// PeerConnectionEvents.onLocalDescription event.
 			peerConnectionClient.createOffer();
-		} else {
-			if (params.offerSdp != null) {
-				peerConnectionClient.setRemoteDescription(params.offerSdp);
-				logAndToast("Creating ANSWER...");
-				// Create answer. Answer SDP will be sent to offering client
-				// in
-				// PeerConnectionEvents.onLocalDescription event.
-				peerConnectionClient.createAnswer();
-			}
-			if (params.iceCandidates != null) {
-				// Add remote ICE candidates from room.
-				for (IceCandidate iceCandidate : params.iceCandidates) {
-					peerConnectionClient.addRemoteIceCandidate(iceCandidate);
-				}
-			}
 		}
 	}
 
@@ -338,11 +322,7 @@ public class CallActivity extends Activity {
 					if (jamSquareClient != null) {
 						logAndToast("Sending " + sdp.type + ", delay=" + delta
 								+ "ms");
-						if (signalingParameters.initiator) {
-							jamSquareClient.sendOfferSdp(sdp);
-						} else {
-							jamSquareClient.sendAnswerSdp(sdp);
-						}
+						jamSquareClient.sendOfferSdp(sdp);
 					}
 				}
 			});

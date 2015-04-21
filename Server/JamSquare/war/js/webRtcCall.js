@@ -17,7 +17,7 @@ function connectToSignallingServer(callBack) {
 
 		signalingChannel = channel.open();
 
-    // TODO
+    // TODO(houssainy) remove bind
     signalingChannel.onopen = onOpen.bind(this, callBack);
     signalingChannel.onmessage = onMessage;
     signalingChannel.onerror = onError;

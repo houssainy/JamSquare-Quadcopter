@@ -95,8 +95,6 @@ public class MainActivity extends Activity {
 				intent.putExtra(CallActivity.EXTRA_CPUOVERUSE_DETECTION,
 						cpuOveruseDetection);
 				intent.putExtra(CallActivity.EXTRA_DISPLAY_HUD, displayHud);
-
-				intent.putExtra(CallActivity.SIGNALING_ID, "__quadcopter1992");
 				
 				startActivity(intent);
 			}

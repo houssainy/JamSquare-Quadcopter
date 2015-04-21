@@ -31,6 +31,7 @@ import android.content.Context;
 import android.opengl.EGLContext;
 import android.util.Log;
 
+import com.alexu.csed.jamsquare.connection.JamSquareClient.SignalingParameters;
 import com.alexu.csed.jamsquare.util.LooperExecutor;
 
 import org.webrtc.DataChannel;
