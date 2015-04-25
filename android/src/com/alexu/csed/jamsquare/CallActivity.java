@@ -1,3 +1,6 @@
+/*
+ *  Copyright (c) 2015 Jam^2 project authors. All Rights Reserved.
+ */
 package com.alexu.csed.jamsquare;
 
 import org.webrtc.IceCandidate;
@@ -9,7 +12,6 @@ import com.alexu.csed.jamsquare.PeerConnectionClient.PeerConnectionParameters;
 import com.alexu.csed.jamsquare.connection.JamSquareClient;
 import com.alexu.csed.jamsquare.connection.JamSquareClient.SignalingEvents;
 import com.alexu.csed.jamsquare.connection.JamSquareClient.SignalingParameters;
-import com.alexu.csed.jamsquare.util.LooperExecutor;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -17,7 +19,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.webkit.WebView;
 import android.widget.Toast;
 
 public class CallActivity extends Activity {
@@ -73,25 +74,10 @@ public class CallActivity extends Activity {
 
 	// Activity interfaces
 	@Override
-	public void onPause() {
-		super.onPause();
-		// TODO(houssainy) Check if i need to stop the video source or not
+	protected void onDestroy() {
 		if (peerConnectionClient != null) {
 			peerConnectionClient.stopVideoSource();
 		}
-	}
-
-	@Override
-	public void onResume() {
-		super.onResume();
-		// TODO(houssainy) Remove this if source video will not be stopped
-		if (peerConnectionClient != null) {
-			peerConnectionClient.startVideoSource();
-		}
-	}
-
-	@Override
-	protected void onDestroy() {
 		disconnect();
 		super.onDestroy();
 	}

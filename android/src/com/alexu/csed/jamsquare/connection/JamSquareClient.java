@@ -1,3 +1,6 @@
+/*
+ *  Copyright (c) 2015 Jam^2 project authors. All Rights Reserved.
+ */
 package com.alexu.csed.jamsquare.connection;
 
 import java.util.LinkedList;
@@ -266,6 +269,9 @@ public class JamSquareClient {
 		}
 	}
 
+	/**
+	 * Callback interface to be exposed to JavaScript through webView.
+	 */
 	public class SignalingJSInterface {
 		@JavascriptInterface
 		public void onPageReady() {
@@ -303,7 +309,6 @@ public class JamSquareClient {
 		public void onMessage(String msg) {
 			Log.d(TAG, "On message " + msg);
 			try {
-				// TODO(houssainy) try to send msg.data directly from the server
 				JSONObject tempJson = new JSONObject(msg);
 				JSONObject json = new JSONObject(tempJson.getString("data"));
 				String type = json.getString("type");

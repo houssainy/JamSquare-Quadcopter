@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2015 Jam^2 project authors. All Rights Reserved.
+ */
 package com.alexu.csed.jamsquare;
 
 import android.app.Activity;

@@ -1,5 +1,6 @@
-// Copyright (c) 2015 Jam^2 project authors. All Rights Reserved.
-//
+/*
+ * Copyright (c) 2015 Jam^2 project authors. All Rights Reserved.
+ */
 package com.graduation_project.jam_square;
 
 /**
