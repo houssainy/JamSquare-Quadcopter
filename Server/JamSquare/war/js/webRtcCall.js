@@ -41,6 +41,7 @@ function send(data) {
 }
 
 function onMessage (signal) {
+  console.log('On message ' + signal)
   if (!pc)
     createPeerConnection();
 

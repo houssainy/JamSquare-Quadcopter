@@ -2,6 +2,7 @@ package com.graduation_project.jam_square.server;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 
 import javax.servlet.ServletException;
@@ -41,10 +42,11 @@ public class EventServlet extends HttpServlet {
 			throws ServletException, IOException {
 
 		StringBuilder sb = new StringBuilder();
+
 		BufferedReader br = req.getReader();
 		String temp;
 		while ((temp = br.readLine()) != null)
-			sb.append(temp);
+			sb.append(temp + "\r\n");
 
 		Gson gson = new Gson();
 		@SuppressWarnings("unchecked")

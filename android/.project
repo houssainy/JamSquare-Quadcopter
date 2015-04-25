@@ -37,7 +37,12 @@
 			<location>/home/houssainy/Desktop/AndroidWebView</location>
 		</link>
 		<link>
-			<name>WebRTC_Natvie_JavaInterface</name>
+			<name>Native_Audio</name>
+			<type>2</type>
+			<location>/home/houssainy/Desktop/MyWorkSpace/WebRTC/src/webrtc/modules/audio_device/android/java/src</location>
+		</link>
+		<link>
+			<name>WebRTC_native_java_interface</name>
 			<type>2</type>
 			<location>/home/houssainy/Desktop/MyWorkSpace/WebRTC/src/talk/app/webrtc/java/src</location>
 		</link>

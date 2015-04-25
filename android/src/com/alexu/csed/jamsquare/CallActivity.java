@@ -17,6 +17,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.webkit.WebView;
 import android.widget.Toast;
 
 public class CallActivity extends Activity {
@@ -49,6 +50,7 @@ public class CallActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		setContentView(R.layout.webview_activity);
 
 		final Intent intent = getIntent();
 		peerConnectionParameters = new PeerConnectionParameters(
@@ -65,12 +67,8 @@ public class CallActivity extends Activity {
 				intent.getBooleanExtra(EXTRA_CPUOVERUSE_DETECTION, true));
 
 		// Create connection client.
-		jamSquareClient = new JamSquareClient(signalingEventsListner,
-				new LooperExecutor());
+		jamSquareClient = new JamSquareClient(signalingEventsListner, this);
 		signalingParameters = jamSquareClient.getSignalingParameters();
-
-//		createPeerConnectionFactory();
-		startCall();
 	}
 
 	// Activity interfaces
@@ -110,7 +108,6 @@ public class CallActivity extends Activity {
 		// Start connection to signaling server.
 		logAndToast("Connecting to Signaling Server...");
 		jamSquareClient.connectToSignalingServer();
-		logAndToast("Connected.");
 	}
 
 	// Should be called from UI thread
@@ -223,6 +220,15 @@ public class CallActivity extends Activity {
 
 	// Implementation of JamSquareClient.SignalingEvents Interface
 	private SignalingEvents signalingEventsListner = new SignalingEvents() {
+		@Override
+		public void onServerPageRead() {
+			startCall();
+		}
+
+		@Override
+		public void onConnectedToServer() {
+			createPeerConnectionFactory();
+		}
 
 		@Override
 		public void onConnectedToRoom(final SignalingParameters params) {

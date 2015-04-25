@@ -398,10 +398,10 @@ public class PeerConnectionClient {
 		mediaStream = factory.createLocalMediaStream("ARDAMS");
 		if (videoCallEnabled) {
 			String cameraDeviceName = VideoCapturerAndroid.getDeviceName(0);
-			String frontCameraDeviceName = VideoCapturerAndroid
-					.getNameOfFrontFacingDevice();
-			if (numberOfCameras > 1 && frontCameraDeviceName != null) {
-				cameraDeviceName = frontCameraDeviceName;
+			String backCameraDeviceName = VideoCapturerAndroid
+					.getNameOfBackFacingDevice();
+			if (numberOfCameras > 1 && backCameraDeviceName != null) {
+				cameraDeviceName = backCameraDeviceName;
 			}
 			Log.d(TAG, "Opening camera: " + cameraDeviceName);
 			videoCapturer = VideoCapturerAndroid.create(cameraDeviceName);
@@ -640,8 +640,8 @@ public class PeerConnectionClient {
 		videoSource = factory.createVideoSource(capturer, videoConstraints);
 
 		localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
-		localVideoTrack.setEnabled(renderVideo);
-		localVideoTrack.addRenderer(new VideoRenderer(localRender));
+//		localVideoTrack.setEnabled(renderVideo);
+//		localVideoTrack.addRenderer(new VideoRenderer(localRender));// TODO(houssainy) localRender null!
 		return localVideoTrack;
 	}
 

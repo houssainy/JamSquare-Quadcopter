@@ -1,45 +1,22 @@
-/*
- * libjingle
- * Copyright 2014 Google Inc.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  1. Redistributions of source code must retain the above copyright notice,
- *     this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright notice,
- *     this list of conditions and the following disclaimer in the documentation
- *     and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
- * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 package com.alexu.csed.jamsquare.connection;
 
-import java.io.IOException;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
+import android.app.Activity;
+import android.os.Build;
 import android.util.Log;
+import android.webkit.ConsoleMessage;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.widget.Toast;
 
-import com.alexu.csed.jamsquare.channel_api_client.ChannelAPI;
-import com.alexu.csed.jamsquare.channel_api_client.ChannelAPI.ChannelException;
-import com.alexu.csed.jamsquare.channel_api_client.ChannelService;
-import com.alexu.csed.jamsquare.util.AsyncHttpURLConnection;
-import com.alexu.csed.jamsquare.util.AsyncHttpURLConnection.AsyncHttpEvents;
-import com.alexu.csed.jamsquare.util.LooperExecutor;
-
-import org.apache.http.client.ClientProtocolException;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.IceCandidate;
@@ -55,9 +32,10 @@ public class JamSquareClient {
 	private SignalingEvents signalingEventsListner;
 	private SignalingParameters signalingParameters;
 
-	private ChannelAPI channel;
+	private ExecutorService postMessagesExcutor;
 
-	private LooperExecutor executor;
+	private Activity activity;
+	private WebView webView;
 
 	private ConnectionState connectionState;
 
@@ -65,20 +43,56 @@ public class JamSquareClient {
 		NEW, CONNECTED, CLOSED, ERROR
 	};
 
-	private enum MessageType {
-		MESSAGE, LEAVE
-	};
-
 	public JamSquareClient(SignalingEvents signalingEventsListner,
-			LooperExecutor executor) {
+			Activity activity) {
 		this.signalingEventsListner = signalingEventsListner;
-		this.executor = executor;
+		this.activity = activity;
+
+		this.postMessagesExcutor = Executors.newFixedThreadPool(1);
+
+		connectionState = ConnectionState.NEW;
 
 		createSignalingParamters();
+		initializaWebView();
+	}
+
+	@TargetApi(Build.VERSION_CODES.KITKAT)
+	@SuppressLint({ "JavascriptInterface", "SetJavaScriptEnabled" })
+	private void initializaWebView() {
+		webView = (WebView) activity
+				.findViewById(com.alexu.csed.jamsquare.R.id.webview);
+		WebSettings webSettings = webView.getSettings();
+		webSettings.setJavaScriptEnabled(true);
+
+		webView.addJavascriptInterface(new SignalingJSInterface(), "Android");
+
+		webView.setWebChromeClient(new WebChromeClient() {
+			@Override
+			public boolean onConsoleMessage(ConsoleMessage cm) {
+				Log.d("MyApplication",
+						cm.message() + " -- From line " + cm.lineNumber()
+								+ " of " + cm.sourceId());
+				return true;
+			}
+
+			@Override
+			public void onCloseWindow(WebView window) {
+				super.onCloseWindow(window);
+				Log.d(TAG, "Window close");
+			};
+		});
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+			WebView.setWebContentsDebuggingEnabled(true);
+		}
+
+		// webView.loadUrl("https://jam-square.appspot.com/quadcopter.html");
+		webView.loadUrl("http://192.168.1.5:8080//quadcopter.html");
 	}
 
 	private void createSignalingParamters() {
-		signalingParameters = new SignalingParameters(null, true,
+		signalingParameters = new SignalingParameters(
+				new LinkedList<PeerConnection.IceServer>(), true,
 				getPcConstraints(), getVideoConstraints(),
 				getAudioConstraints(), QUADCOPTER_ID, getConnectURL(),
 				getPostURL(), null, null);
@@ -111,77 +125,53 @@ public class JamSquareClient {
 		return signalingParameters;
 	}
 
+	// ************* JS Calls ****************
 	public void connectToSignalingServer() {
-		AsyncHttpURLConnection httpConnection = new AsyncHttpURLConnection(
-				"GET", getConnectURL() + "?id=" + QUADCOPTER_ID, null,
-				new AsyncHttpEvents() {
-					@Override
-					public void onHttpError(String errorMessage) {
-						reportError("GAE POST error: " + errorMessage);
-					}
-
-					@Override
-					public void onHttpComplete(String response) {
-						Log.d(TAG, "Connect response = " + response);
-						// TODO(houssainy) Receive the message as Json after
-						// updating the server's response
-						String key = response;
-
-						ChatListener chatListener = new ChatListener();
-						try {
-							channel = new ChannelAPI(SERVER_BASE_URL, key,
-									chatListener);
-							channel.open();
-						} catch (ClientProtocolException e) {
-							e.printStackTrace();
-						} catch (IOException e) {
-							e.printStackTrace();
-						} catch (ChannelException e) {
-							e.printStackTrace();
-						}
-					}
-				});
-		httpConnection.send();
+		loadURLOnWebView("javascript:connectToSignallingServer(\""
+				+ QUADCOPTER_ID + "\")");
 	}
 
 	public void disconnectFromSignalingServer() {
 		Log.d(TAG, "Disconnect. Connection state: " + connectionState);
-		if (connectionState == ConnectionState.CONNECTED) {
-			Log.d(TAG, "Closing room.");
-			sendPostMessage(MessageType.LEAVE, null);
-		}
+		Log.d(TAG, "Closing room.");
+
 		connectionState = ConnectionState.CLOSED;
 
-		try {
-			channel.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		loadURLOnWebView("javascript:close()");
 	}
 
 	// Send Ice candidate to the other participant.
 	public void sendLocalIceCandidate(final IceCandidate candidate) {
-		executor.execute(new Runnable() {
+		postMessagesExcutor.execute(new Runnable() {
 			@Override
 			public void run() {
+				if (candidate.sdp == null)
+					return;
+
 				JSONObject json = new JSONObject();
 				jsonPut(json, "type", "candidate");
 				jsonPut(json, "id", signalingParameters.clientId);
-				jsonPut(json, "data", candidate.sdp);
+
+				JSONObject jsonCandidate = new JSONObject();
+				jsonPut(jsonCandidate, "sdpMLineIndex", candidate.sdpMLineIndex);
+				jsonPut(jsonCandidate, "sdpMid", candidate.sdpMid);
+				jsonPut(jsonCandidate, "candidate", candidate.sdp);
+
+				jsonPut(json, "data", jsonCandidate);
 
 				// Call initiator sends ice candidates to GAE server.
 				if (connectionState != ConnectionState.CONNECTED) {
 					reportError("Sending ICE candidate in non connected state.");
 					return;
 				}
-				sendPostMessage(MessageType.MESSAGE, json.toString());
+				sendPostMessage(json.toString());
 			}
 		});
 	}
 
 	// Send local offer SDP to the other participant.
 	public void sendOfferSdp(final SessionDescription sdp) {
-		executor.execute(new Runnable() {
+		postMessagesExcutor.execute(new Runnable() {
 			@Override
 			public void run() {
 				if (connectionState != ConnectionState.CONNECTED) {
@@ -191,17 +181,38 @@ public class JamSquareClient {
 				JSONObject json = new JSONObject();
 				jsonPut(json, "type", "offer");
 				jsonPut(json, "id", signalingParameters.clientId);
-				jsonPut(json, "data", sdp.description);
-				sendPostMessage(MessageType.MESSAGE, json.toString());
+
+				JSONObject jsonSdp = new JSONObject();
+				jsonPut(jsonSdp, "sdp", sdp.description);
+				jsonPut(jsonSdp, "type", sdp.type.canonicalForm());
+				System.out.println(sdp.description);
+				jsonPut(json, "data", jsonSdp);
+
+				sendPostMessage(json.toString());
 			}
 		});
 	}
 
+	// Send message to signaling server using JS method
+	private void sendPostMessage(String msg) {
+		loadURLOnWebView("javascript:sendToServer(\'" + msg + "\');");
+	}
+
 	// --------------------------------------------------------------------
 	// Helper functions.
+	private void loadURLOnWebView(final String url) {
+		activity.runOnUiThread(new Runnable() {
+
+			@Override
+			public void run() {
+				webView.loadUrl(url);
+			}
+		});
+	}
+
 	private void reportError(final String errorMessage) {
 		Log.e(TAG, errorMessage);
-		executor.execute(new Runnable() {
+		postMessagesExcutor.execute(new Runnable() {
 			@Override
 			public void run() {
 				if (connectionState != ConnectionState.ERROR) {
@@ -219,75 +230,6 @@ public class JamSquareClient {
 		} catch (JSONException e) {
 			throw new RuntimeException(e);
 		}
-	}
-
-	// Send SDP or ICE candidate to a room server.
-	private void sendPostMessage(final MessageType messageType,
-			final String message) {
-		// TODO(houssainy) Implement this method
-		// String logInfo = url;
-		// if (message != null) {
-		// logInfo += ". Message: " + message;
-		// }
-		// Log.d(TAG, "C->GAE: " + logInfo);
-		// AsyncHttpURLConnection httpConnection = new AsyncHttpURLConnection(
-		// "POST", url, message, new AsyncHttpEvents() {
-		// @Override
-		// public void onHttpError(String errorMessage) {
-		// reportError("GAE POST error: " + errorMessage);
-		// }
-		//
-		// @Override
-		// public void onHttpComplete(String response) {
-		// if (messageType == MessageType.MESSAGE) {
-		// try {
-		// JSONObject roomJson = new JSONObject(response);
-		// String result = roomJson.getString("result");
-		// if (!result.equals("SUCCESS")) {
-		// reportError("GAE POST error: " + result);
-		// }
-		// } catch (JSONException e) {
-		// reportError("GAE POST JSON error: "
-		// + e.toString());
-		// }
-		// }
-		// }
-		// });
-		// httpConnection.send();
-	}
-
-	/**
-	 * Callback interface for messages delivered on signaling channel.
-	 * 
-	 * <p>
-	 * Methods are guaranteed to be invoked on the UI thread of |activity|.
-	 */
-	public static interface SignalingEvents {
-		/**
-		 * Callback fired once the room's signaling parameters
-		 * SignalingParameters are extracted.
-		 */
-		public void onConnectedToRoom(final SignalingParameters params);
-
-		/**
-		 * Callback fired once remote SDP is received.
-		 */
-		public void onRemoteDescription(final SessionDescription sdp);
-
-		/**
-		 * Callback fired once remote Ice candidate is received.
-		 */
-		public void onRemoteIceCandidate(final IceCandidate candidate);
-
-		/**
-		 * Callback fired once channel is closed.
-		 */
-		public void onChannelClose();
-
-		/**
-		 * Callback fired once channel error happened.
-		 */
-		public void onChannelError(final String description);
 	}
 
 	/**
@@ -324,40 +266,120 @@ public class JamSquareClient {
 		}
 	}
 
-	public class ChatListener implements ChannelService {
-
-		/**
-		 * Method gets called when we initially connect to the server
-		 */
-		@Override
-		public void onOpen() {
-			Log.d(TAG, "Channel API Opened.");
+	public class SignalingJSInterface {
+		@JavascriptInterface
+		public void onPageReady() {
+			Log.d(TAG, "Page Ready...");
+			logAndToast("Page Ready...");
+			signalingEventsListner.onServerPageRead();
 		}
 
-		/**
-		 * Method gets called when the server sends a message.
-		 */
-		@Override
-		public void onMessage(String message) {
-			// TODO(houssainy)
-			System.out.println("Server push: " + message);
+		@JavascriptInterface
+		public void onConnectToSignalingServer() {
+			Log.d(TAG, "Connection opened...");
+			logAndToast("Connection opened...");
+
+			connectionState = ConnectionState.CONNECTED;
+			signalingEventsListner.onConnectedToServer();
 		}
 
-		/**
-		 * Method gets called when we close the connection to the server.
-		 */
-		@Override
-		public void onClose() {
-			Log.d(TAG, "Channel API Cloesed.");
+		@JavascriptInterface
+		public void onSignalingChannelClosed() {
+			Log.d(TAG, "Connection To Server Closed...");
+			logAndToast("Connection To Server Closed...");
 		}
 
-		/**
-		 * Method gets called when an error occurs on the server.
-		 */
-		@Override
-		public void onError(Integer errorCode, String description) {
-			Log.d(TAG, "Error: " + errorCode + " Reason: " + description);
+		@JavascriptInterface
+		public void onResponse(String response) {
+			Log.d(TAG, "Response: " + response);
 		}
 
+		@JavascriptInterface
+		public void onSignalingError(String error) {
+			reportError(error);
+		}
+
+		@JavascriptInterface
+		public void onMessage(String msg) {
+			Log.d(TAG, "On message " + msg);
+			try {
+				// TODO(houssainy) try to send msg.data directly from the server
+				JSONObject tempJson = new JSONObject(msg);
+				JSONObject json = new JSONObject(tempJson.getString("data"));
+				String type = json.getString("type");
+				if (type.equals("answer")) {
+					JSONObject jsonAnswer = json.getJSONObject("data");
+
+					SessionDescription sdp = new SessionDescription(
+							SessionDescription.Type.fromCanonicalForm(jsonAnswer
+									.getString("type")),
+							jsonAnswer.getString("sdp"));
+					signalingEventsListner.onRemoteDescription(sdp);
+				} else if (type.equals("candidate")) { // Candidate
+					JSONObject jsonCandidate = json.getJSONObject("data");
+
+					IceCandidate candidate = new IceCandidate(
+							jsonCandidate.getString("sdpMid"),
+							jsonCandidate.getInt("sdpMLineIndex"),
+							jsonCandidate.getString("candidate"));
+
+					signalingEventsListner.onRemoteIceCandidate(candidate);
+				} else {
+					reportError("Unexpected message: " + msg);
+				}
+
+			} catch (JSONException e) {
+				reportError("Message JSON parsing error: " + e.toString());
+			}
+		}
+	}
+
+	public void logAndToast(String toast) {
+		Log.d(TAG, toast);
+		Toast.makeText(activity, toast, Toast.LENGTH_SHORT).show();
+	}
+
+	/**
+	 * Callback interface for messages delivered on signaling channel.
+	 * 
+	 * <p>
+	 * Methods are guaranteed to be invoked on the UI thread of |activity|.
+	 */
+	public static interface SignalingEvents {
+		/**
+		 * Callback fired once the html page of the server is ready.
+		 */
+		public void onServerPageRead();
+
+		/**
+		 * Callback fired once the channel api is opened and ready to be used.
+		 */
+		public void onConnectedToServer();
+
+		/**
+		 * Callback fired once the room's signaling parameters
+		 * SignalingParameters are extracted.
+		 */
+		public void onConnectedToRoom(final SignalingParameters params);
+
+		/**
+		 * Callback fired once remote SDP is received.
+		 */
+		public void onRemoteDescription(final SessionDescription sdp);
+
+		/**
+		 * Callback fired once remote Ice candidate is received.
+		 */
+		public void onRemoteIceCandidate(final IceCandidate candidate);
+
+		/**
+		 * Callback fired once channel is closed.
+		 */
+		public void onChannelClose();
+
+		/**
+		 * Callback fired once channel error happened.
+		 */
+		public void onChannelError(final String description);
 	}
 }
