@@ -1,3 +1,5 @@
+// Copyright (c) 2015 Jam^2 project authors. All Rights Reserved.
+//
 package com.graduation_project.jam_square.server.handlers;
 
 import java.io.IOException;
@@ -14,9 +16,6 @@ import com.graduation_project.jam_square.PeerManager;
 import com.graduation_project.jam_square.Util;
 
 public class OnDisconnectServlet extends HttpServlet {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
 	@Override

@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2015 Jam^2 project authors. All Rights Reserved. -->
+
 <html>
 <head>
   <script
@@ -5,22 +7,18 @@
   <script type="text/javascript" src="/_ah/channel/jsapi"></script>
   <script type="text/javascript" src="js/webRtcCall.js"></script> 
 </head>
-  <body background="quad.jpg">
+  <body background="assets/quad.jpg">
     <h1>Control Station</h1>
 
     <h2 id='status'> Not Connected </h2>
-      <br>
-      <br>
-      User ID:<br>
-      <input type="text" id="id" value="Client">
-      <button onclick='connectToSignallingServer(null)'>Connect To QuadCopter</button>
+    <br>
+    <br>
 
-      <video id="remoteView" autoplay="true" muted="false"></video>
-      <button>Up</button>
-      <button>Down</button>
-      <button>Left</button>
-      <button>Right</button>
+    <video id="remoteView" autoplay="true" muted="false"></video>
 
-      <button onclick='createTestOffer()'>Create Test Offer</button>
+    <button>Up</button>
+    <button>Down</button>
+    <button>Left</button>
+    <button>Right</button>
   </body>
 </html>

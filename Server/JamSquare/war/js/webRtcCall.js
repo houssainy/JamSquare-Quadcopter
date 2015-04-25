@@ -1,35 +1,39 @@
 // Copyright (c) 2015 Jam^2 project authors. All Rights Reserved.
-
+//
 var signalingChannel;
 var id;
 var pc;
 
-// TODO(houssainy) uncomment this method
-// $(document).ready(function() {
-//     connectToSignallingServer('chromeClient');
-// });
+$(document).ready(function() {
+  connectToSignallingServer('chromeClient');
+});
 
-function connectToSignallingServer(callBack) {
-  if(!id)
-    id = document.getElementById('id').value;
+function connectToSignallingServer(clientId) {
+	id = clientId
 	$.get('/connect?id=' + id, function(data) {
-		channel = new goog.appengine.Channel(data);
+    console.log('Response = ' + data)
+    var jsonMsg = JSON.parse(data)
 
-		signalingChannel = channel.open();
+    if(jsonMsg.type == "error") {
+      alert(jsonMsg.data)
+      return;
+    } else if (jsonMsg.type == "token") {
+      var key = jsonMsg.data
+      channel = new goog.appengine.Channel(key);
 
-    // TODO(houssainy) remove bind
-    signalingChannel.onopen = onOpen.bind(this, callBack);
-    signalingChannel.onmessage = onMessage;
-    signalingChannel.onerror = onError;
-    signalingChannel.onclose = onClose;
+      signalingChannel = channel.open();
 
-    signalingChannel.send = send;
+      signalingChannel.onopen = onOpen;
+      signalingChannel.onmessage = onMessage;
+      signalingChannel.onerror = onError;
+      signalingChannel.onclose = onClose;
+
+      signalingChannel.send = send;
+    }
 	});
 };
 
-function onOpen (callBack) {
-  if(callBack)
-    callBack();
+function onOpen() {
   console.log('Connection opened...');
   document.getElementById('status').innerHTML = 'Connected'
 };
@@ -37,6 +41,12 @@ function onOpen (callBack) {
 function send(data) {
   $.post("/eventupdate", data, function(resp) {
     console.log("Response: " + resp);
+    var jsonMsg = JSON.parse(data)
+
+    if(jsonMsg.type == "error") {
+      alert(jsonMsg.data)
+      return;
+    }
   });
 }
 
@@ -45,7 +55,7 @@ function onMessage (signal) {
   if (!pc)
     createPeerConnection();
 
-  msg = JSON.parse(signal.data);
+  var msg = JSON.parse(signal.data);
   if (msg.type == "offer") {
     pc.setRemoteDescription(new RTCSessionDescription(msg.data));
     pc.createAnswer(gotAnswer);
@@ -113,44 +123,44 @@ function createPeerConnection() {
 	};
 };
 
-// TODO(houssainy) removce this test method
-function createTestOffer () {
-  id = '__quadcopter1992';
-  connectToSignallingServer(function() {
-    createPeerConnection();
-
-    navigator.webkitGetUserMedia({video:true, audio:true},
-        onUserMediaSuccess, failed);
-
-    function onUserMediaSuccess(stream) {
-      console.log("User has granted access to local media.");
-
-      pc.addStream(stream);
-
-      var remoteView = document.getElementById("remoteView");
-      remoteView.src = URL.createObjectURL(stream);
-
-      pc.createOffer(gotOffer, failed);
-
-      function gotOffer(offer) {
-        console.log("Offer Created");
-        pc.setLocalDescription(offer, onSetSessionDescriptionSuccess, failed);
-
-        var sdpData = {
-          "type" : "offer",
-          "id" : id,
-          "data" : offer
-        };
-        signalingChannel.send(JSON.stringify(sdpData));
-      }
-
-      function onSetSessionDescriptionSuccess() {
-        console.log("Set session description success.");
-      }
-    }
-
-    function failed() {
-      console.log('Failed!');
-    }
-  });
-}
+//// TODO(houssainy) removce this test method
+//function createTestOffer () {
+//  id = '__quadcopter1992';
+//  connectToSignallingServer(function() {
+//    createPeerConnection();
+//
+//    navigator.webkitGetUserMedia({video:true, audio:true},
+//        onUserMediaSuccess, failed);
+//
+//    function onUserMediaSuccess(stream) {
+//      console.log("User has granted access to local media.");
+//
+//      pc.addStream(stream);
+//
+//      var remoteView = document.getElementById("remoteView");
+//      remoteView.src = URL.createObjectURL(stream);
+//
+//      pc.createOffer(gotOffer, failed);
+//
+//      function gotOffer(offer) {
+//        console.log("Offer Created");
+//        pc.setLocalDescription(offer, onSetSessionDescriptionSuccess, failed);
+//
+//        var sdpData = {
+//          "type" : "offer",
+//          "id" : id,
+//          "data" : offer
+//        };
+//        signalingChannel.send(JSON.stringify(sdpData));
+//      }
+//
+//      function onSetSessionDescriptionSuccess() {
+//        console.log("Set session description success.");
+//      }
+//    }
+//
+//    function failed() {
+//      console.log('Failed!');
+//    }
+//  });
+//}

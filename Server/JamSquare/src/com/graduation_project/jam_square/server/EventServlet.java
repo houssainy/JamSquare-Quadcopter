@@ -1,8 +1,9 @@
+// Copyright (c) 2015 Jam^2 project authors. All Rights Reserved.
+//
 package com.graduation_project.jam_square.server;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.HashMap;
 
 import javax.servlet.ServletException;
@@ -23,8 +24,8 @@ import com.graduation_project.jam_square.Util;
  * @author houssainy
  *
  *         This class is responsible of receiving any update in the events of
- *         webRTC (onOffer, onAnswer, onIceCandidate, onAddStream). Once the
- *         server receives a new event from one of the peers, it immediately
+ *         webRTC events (onOffer, onAnswer, onIceCandidate, onAddStream). Once
+ *         the server receives a new event from one of the peers, it immediately
  *         sends it to all the other peers. Also this class will provide the
  *         ability of get all the ICECandidate, stream Ids which have been
  *         posted from the other peer.
@@ -32,38 +33,42 @@ import com.graduation_project.jam_square.Util;
  *         URL: /eventupdate
  */
 public class EventServlet extends HttpServlet {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 
+		String tempStr;
 		StringBuilder sb = new StringBuilder();
-
 		BufferedReader br = req.getReader();
-		String temp;
-		while ((temp = br.readLine()) != null)
-			sb.append(temp + "\r\n");
+
+		while ((tempStr = br.readLine()) != null)
+			sb.append(tempStr + "\r\n");
 
 		Gson gson = new Gson();
 		@SuppressWarnings("unchecked")
 		HashMap<String, Object> dataMap = gson.fromJson(sb.toString(),
 				HashMap.class);
 
-		String peerId = dataMap.get("id").toString();
-		if (peerId == null) {
-			sendResponse(resp, "<h1>Missing User Id!</h1>");
+		Object temp = dataMap.get(Util.ID);
+		if (temp == null) {
+			sendResponse(resp, Util.ERROR, "ERROR: Missing User Id!");
+			return;
+		}
+		String peerId = temp.toString();
+
+		temp = dataMap.get(Util.TYPE);
+		if (temp == null) {
+			sendResponse(resp, Util.ERROR, "ERROR: Message Type is Missed!");
 			return;
 		}
 
-		String type = dataMap.get(Util.TYPE).toString();
-		Object data = dataMap.get(Util.DATA);
+		String type = temp.toString();
 
+		Object data = dataMap.get(Util.DATA);
 		if (data == null) {
-			sendResponse(resp, "ERROR");
+			sendResponse(resp, Util.ERROR, "ERROR: No Data is Received!");
 			return;
 		}
 
@@ -81,7 +86,7 @@ public class EventServlet extends HttpServlet {
 			onIceCandidate(data, pm, peerId);
 			break;
 		}
-		sendResponse(resp, "OK");
+		sendResponse(resp, Util.OK, "OK");
 	}
 
 	/**
@@ -128,7 +133,6 @@ public class EventServlet extends HttpServlet {
 			if (pm.getQuadCopterPeer() != null)
 				sendDataThroughChannelTo(pm.getQuadCopterPeer(), answer,
 						Util.ANSWER);
-
 		}
 	}
 
@@ -168,9 +172,13 @@ public class EventServlet extends HttpServlet {
 		channelService.sendMessage(msg);
 	}
 
-	private void sendResponse(HttpServletResponse resp, String msg)
+	private void sendResponse(HttpServletResponse resp, String type, String msg)
 			throws IOException {
+		HashMap<String, Object> mapData = new HashMap<String, Object>();
+		mapData.put("type", type);
+		mapData.put("data", msg);
+		
 		resp.setContentType("text/html");
-		resp.getWriter().write(msg);
+		resp.getWriter().write(new Gson().toJson(mapData));
 	}
 }

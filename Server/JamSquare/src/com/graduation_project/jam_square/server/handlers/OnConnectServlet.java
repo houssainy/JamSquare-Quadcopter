@@ -1,3 +1,5 @@
+// Copyright (c) 2015 Jam^2 project authors. All Rights Reserved.
+//
 package com.graduation_project.jam_square.server.handlers;
 
 import java.io.IOException;
@@ -28,10 +30,6 @@ import com.graduation_project.jam_square.Util;
  *         _ah/channel/connected/
  */
 public class OnConnectServlet extends HttpServlet {
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
 	@Override
@@ -41,8 +39,8 @@ public class OnConnectServlet extends HttpServlet {
 		ChannelService channelService = ChannelServiceFactory
 				.getChannelService();
 		ChannelPresence presence = channelService.parsePresence(req);
-
 		PeerManager pm = PeerManager.get();
+		
 		if (presence.clientId().equals(Util.QUADCOPTER_ID)) { // Quadcopter
 			if (pm.getQuadCopterPeer() == null) { // No connected Quadcopter
 				System.out.println("Quadcopter connected with id = "
@@ -52,7 +50,7 @@ public class OnConnectServlet extends HttpServlet {
 				// Get all cached data from ClientPeer
 				if (pm.getClientPeer() != null)
 					getDataFrom(pm.getClientPeer(), pm.getQuadCopterPeer());
-			} else {
+			} else { // Quadcopter Connected
 				sendResponse(resp, "Quadcopter already connected!");
 			}
 		} else {// Client
@@ -64,7 +62,7 @@ public class OnConnectServlet extends HttpServlet {
 				// Get all cached data from QuadcopterPeer
 				if (pm.getQuadCopterPeer() != null)
 					getDataFrom(pm.getQuadCopterPeer(), pm.getClientPeer());
-			} else {
+			} else { // Client connected
 				sendResponse(resp, "There is an active client connected.");
 			}
 		}

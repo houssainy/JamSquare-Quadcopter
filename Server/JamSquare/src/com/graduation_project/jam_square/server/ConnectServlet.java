@@ -1,6 +1,9 @@
+// Copyright (c) 2015 Jam^2 project authors. All Rights Reserved.
+//
 package com.graduation_project.jam_square.server;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -9,6 +12,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.appengine.api.channel.ChannelService;
 import com.google.appengine.api.channel.ChannelServiceFactory;
+import com.google.gson.Gson;
+import com.graduation_project.jam_square.Util;
 
 /**
  *
@@ -20,10 +25,6 @@ import com.google.appengine.api.channel.ChannelServiceFactory;
  *         URL: /connect?id=
  */
 public class ConnectServlet extends HttpServlet {
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
 	@Override
@@ -31,18 +32,23 @@ public class ConnectServlet extends HttpServlet {
 			throws ServletException, IOException {
 		String peerId = req.getParameter("id");
 		if (peerId == null) {
-			send(resp, "<h1>Missing User Id!</h1>");
+			sendResponse(resp, Util.ERROR, "URL is Missing Id");
 			return;
 		}
 		ChannelService channelService = ChannelServiceFactory
 				.getChannelService();
 		String token = channelService.createChannel(peerId);
 
-		send(resp, token);
+		sendResponse(resp, Util.TOKEN, token);
 	}
-	
-	private void send(HttpServletResponse resp, String msg) throws IOException {
+
+	private void sendResponse(HttpServletResponse resp, String type, String msg)
+			throws IOException {
+		HashMap<String, Object> mapData = new HashMap<String, Object>();
+		mapData.put("type", type);
+		mapData.put("data", msg);
+
 		resp.setContentType("text/html");
-		resp.getWriter().write(msg);
+		resp.getWriter().write(new Gson().toJson(mapData));
 	}
 }
