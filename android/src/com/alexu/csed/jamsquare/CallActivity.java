@@ -5,6 +5,8 @@ package com.alexu.csed.jamsquare;
 
 import java.nio.ByteBuffer;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.webrtc.DataChannel;
 import org.webrtc.DataChannel.Buffer;
 import org.webrtc.IceCandidate;
@@ -392,9 +394,19 @@ public class CallActivity extends Activity {
 			byte[] msgBytes = new byte[data.capacity()];
 			data.get(msgBytes);
 
-			String strData = new String(msgBytes);
-			logAndToast("Message Received = "
-					+ strData);
+			try {
+				JSONObject json = new JSONObject(new String(msgBytes));
+				int throttle = json.getInt("throttle");
+				int yaw = json.getInt("yaw");
+				int pitch = json.getInt("pitch");
+				int roll = json.getInt("roll");
+
+				logAndToast("Message Received:\n Throttle = " + throttle
+						+ ", Yaw = " + yaw + ", Pitch = " + pitch + ", Roll = "
+						+ roll);
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
 		}
 
 	}

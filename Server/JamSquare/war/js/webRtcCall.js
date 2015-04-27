@@ -129,9 +129,8 @@ function createPeerConnection() {
 
     dataChannel.onopen = function(event) {
       var readyState = dataChannel.readyState;
-      if (readyState == "open") {
-        dataChannel.send("Hello");
-      }
+      if (readyState == "open")
+        console.log('Data Channel oppended');
     };
 
     dataChannel.onmessage = function(event2) {
@@ -145,9 +144,15 @@ function createPeerConnection() {
 	};
 };
 
-function sendChannelMessage(data) {
+function sendChannelMessage(throttle, yaw, pitch, roll) {
   if(dataChannel) {
-    dataChannel.send(data);
+    var data = {
+      "throttle" : throttle,
+      "yaw" : yaw,
+      "pitch" : pitch,
+      "roll" : roll
+    };
+    dataChannel.send(JSON.stringify(data));
     console.log(data + " Sent.");
   } else {
     console.log("Data Channel not created!");
