@@ -51,4 +51,16 @@ public class PeerManager {
 	public void setClientPeer(Peer clientPeer) {
 		this.clientPeer = clientPeer;
 	}
+	
+	public void disconnectClientWithId(String clientId) {
+		if (clientId.equals(Util.QUADCOPTER_ID)
+				&& quadCopterPeer != null) {
+			System.out.println("Quadcopter disconnected.");
+			quadCopterPeer = null;
+		} else if (clientPeer != null) {
+			System.out.println("Client " + clientId
+					+ " disconnected.");
+			clientPeer = null;
+		}
+	}
 }

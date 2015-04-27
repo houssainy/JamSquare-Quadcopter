@@ -14,7 +14,6 @@ import com.google.appengine.api.channel.ChannelPresence;
 import com.google.appengine.api.channel.ChannelService;
 import com.google.appengine.api.channel.ChannelServiceFactory;
 import com.graduation_project.jam_square.PeerManager;
-import com.graduation_project.jam_square.Util;
 
 public class OnDisconnectServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
@@ -27,15 +26,6 @@ public class OnDisconnectServlet extends HttpServlet {
 				.getChannelService();
 		ChannelPresence presence = channelService.parsePresence(req);
 
-		PeerManager pm = PeerManager.get();
-		if (presence.clientId().equals(Util.QUADCOPTER_ID)
-				&& pm.getQuadCopterPeer() != null) {
-			System.out.println("Quadcopter disconnected.");
-			pm.setQuadCopterPeer(null);
-		} else if (pm.getClientPeer() != null) {
-			System.out.println("Client " + pm.getClientPeer().getId()
-					+ " disconnected.");
-			pm.setClientPeer(null);
-		}
+		PeerManager.get().disconnectClientWithId(presence.clientId());
 	}
 }

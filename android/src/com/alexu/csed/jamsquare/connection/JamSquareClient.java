@@ -90,7 +90,7 @@ public class JamSquareClient {
 		}
 
 		// webView.loadUrl("https://jam-square.appspot.com/quadcopter.html");
-		webView.loadUrl("http://192.168.1.5:8080//quadcopter.html");
+		webView.loadUrl("http://192.168.1.104:8080//quadcopter.html");
 	}
 
 	private void createSignalingParamters() {
@@ -292,7 +292,6 @@ public class JamSquareClient {
 		@JavascriptInterface
 		public void onSignalingChannelClosed() {
 			Log.d(TAG, "Connection To Server Closed...");
-			logAndToast("Connection To Server Closed...");
 		}
 
 		@JavascriptInterface
@@ -329,6 +328,8 @@ public class JamSquareClient {
 							jsonCandidate.getString("candidate"));
 
 					signalingEventsListner.onRemoteIceCandidate(candidate);
+				} else if (type.equals("bye")) {
+					
 				} else {
 					reportError("Unexpected message: " + msg);
 				}
@@ -386,5 +387,16 @@ public class JamSquareClient {
 		 * Callback fired once channel error happened.
 		 */
 		public void onChannelError(final String description);
+		
+		/**
+		 * Callback fired once the other peer closed.
+		 */
+		public void onPeerConnectionClosed();
+	}
+
+	public void close() {
+		loadURLOnWebView("javascript:close()");
+		webView.removeAllViews();
+		webView.destroy();
 	}
 }

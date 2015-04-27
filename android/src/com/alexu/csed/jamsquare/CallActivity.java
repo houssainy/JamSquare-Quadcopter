@@ -3,6 +3,10 @@
  */
 package com.alexu.csed.jamsquare;
 
+import java.nio.ByteBuffer;
+
+import org.webrtc.DataChannel;
+import org.webrtc.DataChannel.Buffer;
 import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
@@ -68,7 +72,8 @@ public class CallActivity extends Activity {
 				intent.getBooleanExtra(EXTRA_CPUOVERUSE_DETECTION, true));
 
 		// Create connection client.
-		jamSquareClient = new JamSquareClient(signalingEventsListner, this);
+		jamSquareClient = new JamSquareClient(new SignalingEventsListner(),
+				this);
 		signalingParameters = jamSquareClient.getSignalingParameters();
 	}
 
@@ -78,14 +83,22 @@ public class CallActivity extends Activity {
 		if (peerConnectionClient != null) {
 			peerConnectionClient.stopVideoSource();
 		}
+		jamSquareClient.close();
 		disconnect();
 		super.onDestroy();
 	}
 
 	// Log |msg| and Toast about it.
-	private void logAndToast(String msg) {
-		Log.d(TAG, msg);
-		Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+	private void logAndToast(final String msg) {
+		runOnUiThread(new Runnable() {
+
+			@Override
+			public void run() {
+				Log.d(TAG, msg);
+				Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT)
+						.show();
+			}
+		});
 	}
 
 	private void startCall() {
@@ -123,7 +136,7 @@ public class CallActivity extends Activity {
 													 * a problem
 													 */,
 							peerConnectionParameters,
-							peerConnectionEventsListner);
+							new PeerConnectionEventsListner());
 				}
 				if (signalingParameters != null) {
 					Log.w(TAG, "EGL context is ready after room connection.");
@@ -194,7 +207,7 @@ public class CallActivity extends Activity {
 															 * and remote
 															 * renders
 															 */,
-				signalingParameters);
+				signalingParameters, new DataChannelObserver());
 
 		if (signalingParameters.initiator) {
 			logAndToast("Creating OFFER...");
@@ -205,7 +218,7 @@ public class CallActivity extends Activity {
 	}
 
 	// Implementation of JamSquareClient.SignalingEvents Interface
-	private SignalingEvents signalingEventsListner = new SignalingEvents() {
+	private class SignalingEventsListner implements SignalingEvents {
 		@Override
 		public void onServerPageRead() {
 			startCall();
@@ -283,10 +296,15 @@ public class CallActivity extends Activity {
 			reportError(description);
 		}
 
-	};
+		@Override
+		public void onPeerConnectionClosed() {
+			peerConnectionClient.close();
+		}
+
+	}
 
 	// Implementation of PeerConnectionClient.PeerConnectionEvents Interface
-	private PeerConnectionEvents peerConnectionEventsListner = new PeerConnectionEvents() {
+	private class PeerConnectionEventsListner implements PeerConnectionEvents {
 		@Override
 		public void onPeerConnectionStatsReady(final StatsReport[] reports) {
 		}
@@ -354,5 +372,30 @@ public class CallActivity extends Activity {
 				}
 			});
 		}
-	};
+
+	}
+
+	// Implementation of DataChannel.Observer Interface
+	private class DataChannelObserver implements DataChannel.Observer {
+
+		@Override
+		public void onStateChange() {
+			Log.d(TAG, "On DataChannel State Change");
+		}
+
+		@Override
+		public void onMessage(Buffer buffer) {
+			// TODO(houssainy)
+			Log.d(TAG, "On DataChannel Message");
+
+			ByteBuffer data = buffer.data;
+			byte[] msgBytes = new byte[data.capacity()];
+			data.get(msgBytes);
+
+			String strData = new String(msgBytes);
+			logAndToast("Message Received = "
+					+ strData);
+		}
+
+	}
 }

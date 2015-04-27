@@ -52,42 +52,71 @@ public class EventServlet extends HttpServlet {
 		HashMap<String, Object> dataMap = gson.fromJson(sb.toString(),
 				HashMap.class);
 
-		Object temp = dataMap.get(Util.ID);
+		System.out.println("Message Received:\n" + dataMap);
+
+		Object temp = dataMap.get(Util.TYPE);
+		if (temp == null) {
+			sendResponse(resp, Util.ERROR, "ERROR: Message Type is Missed!");
+			return;
+		}
+		String type = temp.toString();
+
+		temp = dataMap.get(Util.ID);
 		if (temp == null) {
 			sendResponse(resp, Util.ERROR, "ERROR: Missing User Id!");
 			return;
 		}
 		String peerId = temp.toString();
 
-		temp = dataMap.get(Util.TYPE);
-		if (temp == null) {
-			sendResponse(resp, Util.ERROR, "ERROR: Message Type is Missed!");
-			return;
-		}
-
-		String type = temp.toString();
-
-		Object data = dataMap.get(Util.DATA);
-		if (data == null) {
-			sendResponse(resp, Util.ERROR, "ERROR: No Data is Received!");
-			return;
-		}
-
-		System.out.println("Message Received:\n" + dataMap);
+		Object data;
 
 		PeerManager pm = PeerManager.get();
 		switch (type) {
 		case Util.OFFER:
+			data = dataMap.get(Util.DATA);
+			if (data == null) {
+				sendResponse(resp, Util.ERROR, "ERROR: No Data is Received!");
+				return;
+			}
 			onOffer(data, pm, peerId);
 			break;
 		case Util.ANSWER:
+			data = dataMap.get(Util.DATA);
+			if (data == null) {
+				sendResponse(resp, Util.ERROR, "ERROR: No Data is Received!");
+				return;
+			}
 			onAnswer(data, pm, peerId);
 			break;
 		case Util.ICECANDIDATE:
+			data = dataMap.get(Util.DATA);
+			if (data == null) {
+				sendResponse(resp, Util.ERROR, "ERROR: No Data is Received!");
+				return;
+			}
 			onIceCandidate(data, pm, peerId);
 			break;
+		case Util.BYE:
+			onBye(pm, peerId);
 		}
 		sendResponse(resp, Util.OK, "OK");
+	}
+
+	private void onBye(PeerManager pm, String peerId) {
+		if (peerId.equals(Util.QUADCOPTER_ID)) {
+
+			if (pm.getClientPeer() != null)
+				sendDataThroughChannelTo(pm.getClientPeer(), "bye", Util.BYE);
+
+		} else if (pm.getClientPeer() != null
+				&& pm.getClientPeer().getId().equals(peerId)) {
+
+			if (pm.getQuadCopterPeer() != null)
+				sendDataThroughChannelTo(pm.getQuadCopterPeer(), "bye",
+						Util.BYE);
+		}
+
+		pm.disconnectClientWithId(peerId);
 	}
 
 	/**
@@ -178,7 +207,7 @@ public class EventServlet extends HttpServlet {
 		HashMap<String, Object> mapData = new HashMap<String, Object>();
 		mapData.put("type", type);
 		mapData.put("data", msg);
-		
+
 		resp.setContentType("text/html");
 		resp.getWriter().write(new Gson().toJson(mapData));
 	}

@@ -19,4 +19,6 @@ public class Util {
 	public static final String MESSAGE = "msg";
 
 	public static final String OK = "OK";
+
+	public static final String BYE = "bye";
 }

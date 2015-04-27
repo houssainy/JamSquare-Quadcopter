@@ -124,6 +124,9 @@ public class PeerConnectionClient {
 	private boolean renderVideo = true;
 	private VideoTrack localVideoTrack = null;
 	private VideoTrack remoteVideoTrack = null;
+	// (Houssainy) DataChannel Objects
+	private DataChannel datachannel;
+	private DataChannel.Observer dataChannelObserver;
 
 	/**
 	 * Peer connection parameters.
@@ -224,7 +227,8 @@ public class PeerConnectionClient {
 
 	public void createPeerConnection(final VideoRenderer.Callbacks localRender,
 			final VideoRenderer.Callbacks remoteRender,
-			final SignalingParameters signalingParameters) {
+			final SignalingParameters signalingParameters,
+			final DataChannel.Observer dataChannelObserver) {
 		if (peerConnectionParameters == null) {
 			Log.e(TAG, "Creating peer connection without initializing factory.");
 			return;
@@ -232,6 +236,7 @@ public class PeerConnectionClient {
 		this.localRender = localRender;
 		this.remoteRender = remoteRender;
 		this.signalingParameters = signalingParameters;
+		this.dataChannelObserver = dataChannelObserver;
 		executor.execute(new Runnable() {
 			@Override
 			public void run() {
@@ -302,6 +307,8 @@ public class PeerConnectionClient {
 		} else {
 			pcConstraints.optional.add(new MediaConstraints.KeyValuePair(
 					DTLS_SRTP_KEY_AGREEMENT_CONSTRAINT, "true"));
+			pcConstraints.optional.add(new KeyValuePair("RtpDataChannels",
+					"true"));
 		}
 
 		// Check if there is a camera on device and disable video call if not.
@@ -360,7 +367,11 @@ public class PeerConnectionClient {
 		// Create SDP constraints.
 		sdpMediaConstraints = new MediaConstraints();
 		sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
-				"OfferToReceiveAudio", "true"));
+				"OfferToReceiveAudio", "false")); // (houssainy) Audio not
+													// needed in JamSquare
+													// project
+													// OfferToReceiveAudio =
+													// false
 		if (videoCallEnabled || peerConnectionParameters.loopback) {
 			sdpMediaConstraints.mandatory
 					.add(new MediaConstraints.KeyValuePair(
@@ -388,6 +399,13 @@ public class PeerConnectionClient {
 				signalingParameters.iceServers, pcConstraints, pcObserver);
 		isInitiator = false;
 
+		// (Houssainy) Create DataChannel
+		DataChannel.Init dcInit = new DataChannel.Init();
+		dcInit.ordered = true;
+		datachannel = peerConnection.createDataChannel("__JamSquareDC",
+				dcInit);
+		datachannel.registerObserver(dataChannelObserver);
+
 		// Uncomment to get ALL WebRTC tracing and SENSITIVE libjingle logging.
 		// NOTE: this _must_ happen while |factory| is alive!
 		// Logging.enableTracing(
@@ -408,8 +426,9 @@ public class PeerConnectionClient {
 			mediaStream.addTrack(createVideoTrack(videoCapturer));
 		}
 
-		mediaStream.addTrack(factory.createAudioTrack(AUDIO_TRACK_ID,
-				factory.createAudioSource(audioConstraints)));
+		// (houssainy) audio not needed in JamSquare project so i Removed it
+		// mediaStream.addTrack(factory.createAudioTrack(AUDIO_TRACK_ID,
+		// factory.createAudioSource(audioConstraints)));
 		peerConnection.addStream(mediaStream);
 
 		Log.d(TAG, "Peer connection created.");
@@ -640,8 +659,9 @@ public class PeerConnectionClient {
 		videoSource = factory.createVideoSource(capturer, videoConstraints);
 
 		localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
-//		localVideoTrack.setEnabled(renderVideo);
-//		localVideoTrack.addRenderer(new VideoRenderer(localRender));// TODO(houssainy) localRender null!
+		// localVideoTrack.setEnabled(renderVideo);
+		// localVideoTrack.addRenderer(new VideoRenderer(localRender));//
+		// TODO(houssainy) localRender null!
 		return localVideoTrack;
 	}
 
@@ -889,8 +909,9 @@ public class PeerConnectionClient {
 
 		@Override
 		public void onDataChannel(final DataChannel dc) {
-			reportError("AppRTC doesn't use data channels, but got: "
-					+ dc.label() + " anyway!");
+			// (Houssainy) Remote DataChannel
+			datachannel = dc;
+			datachannel.registerObserver(dataChannelObserver);
 		}
 
 		@Override

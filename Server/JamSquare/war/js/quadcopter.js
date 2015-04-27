@@ -1,13 +1,16 @@
 // Copyright (c) 2015 Jam^2 project authors. All Rights Reserved.
 //
 
+var id;
+
 $(document).ready(function() {
   Android.onPageReady();
 });
 
-function connectToSignallingServer(id) {
+function connectToSignallingServer(clientId) {
   console.log('Connecting to signaling server...');
 
+  id = clientId;
   if(!id)
     Android.onSignalingError('Missing Id!');
 
@@ -52,7 +55,7 @@ function onError () {
 
 function onClose () {
   document.getElementById('status').innerHTML = 'Closed.'
-  Android.onSignalingChannelClosed("Connection To Server Closed...");
+  Android.onSignalingChannelClosed();
 };
 
 function sendToServer(data) {
@@ -68,5 +71,11 @@ function sendToServer(data) {
 }
 
 function close() {
-  console.log('Channel API Closed.')
+   var msg = {
+      "type" : "bye",
+      "id" : id,
+    };
+  $.post("/eventupdate", JSON.stringify(msg), function(resp) {
+    console.log('Channel API Closed.')
+  });
 };

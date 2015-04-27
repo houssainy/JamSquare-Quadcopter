@@ -1,6 +1,7 @@
 // Copyright (c) 2015 Jam^2 project authors. All Rights Reserved.
 //
 var signalingChannel;
+var dataChannel;
 var id;
 var pc;
 
@@ -63,6 +64,9 @@ function onMessage (signal) {
     pc.setRemoteDescription(new RTCSessionDescription(msg.data));
   } else if(msg.type == "candidate") { // Candidate
     pc.addIceCandidate(new RTCIceCandidate(msg.data));
+  } else if(msg.type == "bye") {
+	  pc.close();
+	  console.log("Peer Connection Closed.");
   }
   
   function gotAnswer(desc) {
@@ -117,12 +121,52 @@ function createPeerConnection() {
 		remoteView.src = URL.createObjectURL(event.stream);
 	};
 
+  // On Remote data channel oppended.
+  pc.ondatachannel = function(event) {
+    // TODO(houssainy) Check the label
+    console.log("onDataChannel");
+    dataChannel = event.channel;
+
+    dataChannel.onopen = function(event) {
+      var readyState = dataChannel.readyState;
+      if (readyState == "open") {
+        dataChannel.send("Hello");
+      }
+    };
+
+    dataChannel.onmessage = function(event2) {
+      console.log("DataChannel Message Received = " + event2.data);
+    }
+  }
+
 	// Ask some server to give us TURN server credentials and URIs.
 	function createTurnConfig(onSuccess, onError) {
 		// TODO(houssainy) implement this method to get TURN surver for relaying
 	};
 };
 
+function sendChannelMessage(data) {
+  if(dataChannel) {
+    dataChannel.send(data);
+    console.log(data + " Sent.");
+  } else {
+    console.log("Data Channel not created!");
+  }
+}
+
+window.onclose = function() {
+  // TODO(houssainy) Make sure that this function is working!
+  if(!pc)
+	return;
+  var msg = {
+      "type" : "bye",
+      "id" : id,
+    };
+  $.post("/eventupdate", JSON.stringify(msg), function(resp) {
+    pc.close()
+    console.log('Peer Connection Closed');
+  });
+}
 //// TODO(houssainy) removce this test method
 //function createTestOffer () {
 //  id = '__quadcopter1992';
