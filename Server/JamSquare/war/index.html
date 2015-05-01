@@ -3,16 +3,28 @@
 <html>
   <head>
     <script type="text/javascript" src="/_ah/channel/jsapi"></script>
+    <link rel="stylesheet" href="css/main.css">
   </head>
 
-  <body background="assets/quad.jpg">
-  	<h1>Jam^2 Autunomos Quadcopter</h1>
+  <body>
+    <div id="container">
+    	<h1>Jam^2 Autunomos Quadcopter</h1>
 
-    <br>
-    <br>
+      <img src="assets/dji_f450.jpg">
 
-    <form action="/controlStation.html" method="get">
-      <button type="submit">Connect</button>
-    </form>
+      <p> Control Using:</p>
+      <div class="center-form">
+        <form action="/keyboard-control.html" method="get">
+          <button type="submit">KeyBoard</button>
+        </form>
+        <form action="/kinect-control.html" method="get">
+          <button type="submit">Kinect</button>
+        </form>
+        <form action="/joystick-control.html" method="get">
+          <button type="submit">Joystick</button>
+        </form>
+      </div>
+      <h1></h1>
+    </div>
   </body>
 </html>

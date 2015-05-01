@@ -66,6 +66,7 @@ function onMessage (signal) {
     pc.addIceCandidate(new RTCIceCandidate(msg.data));
   } else if(msg.type == "bye") {
 	  pc.close();
+    document.getElementById('status').innerHTML = 'Not Connected'
 	  console.log("Peer Connection Closed.");
   }
   
