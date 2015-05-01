@@ -1,25 +1,30 @@
 <!-- Copyright (c) 2015 Jam^2 project authors. All Rights Reserved. -->
-
 <html>
 <head>
+  <title>Jam^2</title>
+	
   <script
   src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
   <script type="text/javascript" src="/_ah/channel/jsapi"></script>
   <script type="text/javascript" src="js/webRtcCall.js"></script> 
-  <script type="text/javascript" src="js/keyboardControls.js"></script> 
+  <!--<script type="text/javascript" src="js/keyboardControls.js"></script> 
 </head>
   <body background="assets/quad.jpg" onkeypress="onKeyPressed(event)">
-    <h1>Control Station</h1>
+    <h1>Control Station</h1>-->
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <div id="container">
+  	<h1><a href="https://github.com/houssainy/JamSquare-Quadcopter">Jam^2 Quadcopter</a> <span>Web Client</span></h1>
+  	<span id='status'>Not Connected</span>
 
-    <h2 id='status'> Not Connected </h2>
-    <br>
-    <br>
-
-    <video id="remoteView" autoplay="true" muted="false"></video>
-
-    <button onclick="sendChannelMessage('50', '50', '50', '50')">Up</button>
-    <button onclick="sendChannelMessage('50', '50', '50', '50')">Down</button>
-    <button onclick="sendChannelMessage('50', '50', '50', '50')">Left</button>
+      <video id="remoteView" autoplay="true" muted="false"></video>
+  	
+  	<button onclick="sendChannelMessage('50', '50', '50', '50')">Up</button>
+  	<button onclick="sendChannelMessage('50', '50', '50', '50')">Left</button>
     <button onclick="sendChannelMessage('50', '50', '50', '50')">Right</button>
-  </body>
+  	<button onclick="sendChannelMessage('50', '50', '50', '50')">Down</button>
+  	<h1></h1>
+  </div>
+</body>
 </html>
