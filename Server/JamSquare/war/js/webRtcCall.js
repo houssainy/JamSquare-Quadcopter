@@ -148,7 +148,7 @@ function createPeerConnection() {
 function sendChannelMessage(msg) {
   if(dataChannel) {
     dataChannel.send(msg);
-    console.log(data + " Sent.");
+    console.log(msg + " Sent.");
   } else {
     console.log("Data Channel not created!");
   }
