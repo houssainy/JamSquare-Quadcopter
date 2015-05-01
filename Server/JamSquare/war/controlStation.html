@@ -6,8 +6,9 @@
   src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
   <script type="text/javascript" src="/_ah/channel/jsapi"></script>
   <script type="text/javascript" src="js/webRtcCall.js"></script> 
+  <script type="text/javascript" src="js/keyboardControls.js"></script> 
 </head>
-  <body background="assets/quad.jpg">
+  <body background="assets/quad.jpg" onkeypress="onKeyPressed(event)">
     <h1>Control Station</h1>
 
     <h2 id='status'> Not Connected </h2>

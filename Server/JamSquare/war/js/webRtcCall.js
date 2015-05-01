@@ -144,15 +144,9 @@ function createPeerConnection() {
 	};
 };
 
-function sendChannelMessage(throttle, yaw, pitch, roll) {
+function sendChannelMessage(msg) {
   if(dataChannel) {
-    var data = {
-      "throttle" : throttle,
-      "yaw" : yaw,
-      "pitch" : pitch,
-      "roll" : roll
-    };
-    dataChannel.send(JSON.stringify(data));
+    dataChannel.send(msg);
     console.log(data + " Sent.");
   } else {
     console.log("Data Channel not created!");
@@ -172,44 +166,3 @@ window.onclose = function() {
     console.log('Peer Connection Closed');
   });
 }
-//// TODO(houssainy) removce this test method
-//function createTestOffer () {
-//  id = '__quadcopter1992';
-//  connectToSignallingServer(function() {
-//    createPeerConnection();
-//
-//    navigator.webkitGetUserMedia({video:true, audio:true},
-//        onUserMediaSuccess, failed);
-//
-//    function onUserMediaSuccess(stream) {
-//      console.log("User has granted access to local media.");
-//
-//      pc.addStream(stream);
-//
-//      var remoteView = document.getElementById("remoteView");
-//      remoteView.src = URL.createObjectURL(stream);
-//
-//      pc.createOffer(gotOffer, failed);
-//
-//      function gotOffer(offer) {
-//        console.log("Offer Created");
-//        pc.setLocalDescription(offer, onSetSessionDescriptionSuccess, failed);
-//
-//        var sdpData = {
-//          "type" : "offer",
-//          "id" : id,
-//          "data" : offer
-//        };
-//        signalingChannel.send(JSON.stringify(sdpData));
-//      }
-//
-//      function onSetSessionDescriptionSuccess() {
-//        console.log("Set session description success.");
-//      }
-//    }
-//
-//    function failed() {
-//      console.log('Failed!');
-//    }
-//  });
-//}
