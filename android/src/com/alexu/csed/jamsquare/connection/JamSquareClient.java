@@ -90,7 +90,7 @@ public class JamSquareClient {
 		}
 
 		// webView.loadUrl("https://jam-square.appspot.com/quadcopter.html");
-		webView.loadUrl("http://192.168.1.101:8080//quadcopter.html");
+		webView.loadUrl("http://172.16.5.187:8080//quadcopter.html");
 	}
 
 	private void createSignalingParamters() {

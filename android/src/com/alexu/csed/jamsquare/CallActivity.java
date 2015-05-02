@@ -18,11 +18,15 @@ import com.alexu.csed.jamsquare.PeerConnectionClient.PeerConnectionParameters;
 import com.alexu.csed.jamsquare.connection.JamSquareClient;
 import com.alexu.csed.jamsquare.connection.JamSquareClient.SignalingEvents;
 import com.alexu.csed.jamsquare.connection.JamSquareClient.SignalingParameters;
+import com.alexu.csed.jamsquare.pid.IMU;
+import com.alexu.csed.jamsquare.pid.PID;
+import com.alexu.csed.jamsquare.pid.RemotControl;
+import com.alexu.csed.jamsquare.pid.SerialComunication;
+import com.alexu.csed.jamsquare.pid.Util;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
@@ -44,39 +48,120 @@ public class CallActivity extends Activity {
 	public static final String EXTRA_CPUOVERUSE_DETECTION = "com.alexu.csed.CPUOVERUSE_DETECTION";
 	public static final String EXTRA_DISPLAY_HUD = "com.alexu.csed.DISPLAY_HUD";
 
-	private SignalingParameters signalingParameters;
-	private PeerConnectionParameters peerConnectionParameters;
+	private long callStartedTimeMs = 0;
 
 	private boolean isError;
 
 	private PeerConnectionClient peerConnectionClient = null;
 	private JamSquareClient jamSquareClient;
 
-	private long callStartedTimeMs = 0;
+	private SignalingParameters signalingParameters;
+	private PeerConnectionParameters peerConnectionParameters;
+
+	// PID and sensors Objects
+	private SerialComunication serial;
+	private IMU imu;
+	// Helper class to hold the latest received values from the Quadcopter.
+	private RemotControl remote;
+
+	private PID rollController, pitchController, yawController;
+
+	private boolean isStopped;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.webview_activity);
 
-		final Intent intent = getIntent();
-		peerConnectionParameters = new PeerConnectionParameters(
-				intent.getBooleanExtra(EXTRA_VIDEO_CALL, true),
-				intent.getBooleanExtra(EXTRA_LOOPBACK, false),
-				intent.getIntExtra(EXTRA_VIDEO_WIDTH, 0), intent.getIntExtra(
-						EXTRA_VIDEO_HEIGHT, 0), intent.getIntExtra(
-						EXTRA_VIDEO_FPS, 0), intent.getIntExtra(
-						EXTRA_VIDEO_BITRATE, 0),
-				intent.getStringExtra(EXTRA_VIDEOCODEC),
-				intent.getBooleanExtra(EXTRA_HWCODEC_ENABLED, true),
-				intent.getIntExtra(EXTRA_AUDIO_BITRATE, 0),
-				intent.getStringExtra(EXTRA_AUDIOCODEC),
-				intent.getBooleanExtra(EXTRA_CPUOVERUSE_DETECTION, true));
+		initializaPeerConnectionParameters();
 
 		// Create connection client.
 		jamSquareClient = new JamSquareClient(new SignalingEventsListner(),
 				this);
 		signalingParameters = jamSquareClient.getSignalingParameters();
+
+		// Initialize PID and sensors Objects
+		serial = new SerialComunication(this);
+		imu = new IMU(this);
+
+		remote = new RemotControl(0, 0, 0, 0);
+
+		pidInitialize();
+	}
+
+	private void initializaPeerConnectionParameters() {
+		// Video call enabled flag.
+		boolean videoCallEnabled = Boolean
+				.valueOf(getString(R.string.pref_videocall_default));
+
+		// Get default codecs.
+		String videoCodec = getString(R.string.pref_videocodec_default);
+		String audioCodec = getString(R.string.pref_audiocodec_default);
+
+		// Check HW codec flag.
+		boolean hwCodec = Boolean
+				.valueOf(getString(R.string.pref_hwcodec_default));
+
+		// Get video resolution from settings.
+		int videoWidth = 0;
+		int videoHeight = 0;
+		String resolution = getString(R.string.pref_resolution_default);
+		String[] dimensions = resolution.split("[ x]+");
+		if (dimensions.length == 2) {
+			try {
+				videoWidth = Integer.parseInt(dimensions[0]);
+				videoHeight = Integer.parseInt(dimensions[1]);
+			} catch (NumberFormatException e) {
+				videoWidth = 0;
+				videoHeight = 0;
+				Log.e(TAG, "Wrong video resolution setting: " + resolution);
+			}
+		}
+
+		// Get camera fps from settings.
+		int cameraFps = 0;
+		String fps = getString(R.string.pref_fps_default);
+		try {
+			cameraFps = Integer.parseInt(fps);
+		} catch (NumberFormatException e) {
+			Log.e(TAG, "Wrong camera fps setting: " + fps);
+		}
+
+		// Get video and audio start bitrate.
+		int videoStartBitrate = Integer
+				.parseInt(getString(R.string.pref_startvideobitratevalue_default));
+
+		int audioStartBitrate = Integer
+				.parseInt(getString(R.string.pref_startaudiobitratevalue_default));
+
+		// Test if CpuOveruseDetection should be disabled. By default is
+		// on.
+		boolean cpuOveruseDetection = Boolean
+				.valueOf(getString(R.string.pref_cpu_usage_detection_default));
+
+		peerConnectionParameters = new PeerConnectionParameters(
+				videoCallEnabled, false, videoWidth, videoHeight, cameraFps,
+				videoStartBitrate, videoCodec, hwCodec, audioStartBitrate,
+				audioCodec, cpuOveruseDetection);
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		serial.unRegister();
+		imu.unRegisterSensor();
+
+		isStopped = true;
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		serial.register();
+		imu.registerSensors();
+
+		isStopped = false;
+		new Thread(pidCalculation).start();
 	}
 
 	// Activity interfaces
@@ -387,7 +472,6 @@ public class CallActivity extends Activity {
 
 		@Override
 		public void onMessage(Buffer buffer) {
-			// TODO(houssainy)
 			Log.d(TAG, "On DataChannel Message");
 
 			ByteBuffer data = buffer.data;
@@ -401,13 +485,108 @@ public class CallActivity extends Activity {
 				int pitch = json.getInt("pitch");
 				int roll = json.getInt("roll");
 
-				logAndToast("Message Received:\n Throttle = " + throttle
-						+ ", Yaw = " + yaw + ", Pitch = " + pitch + ", Roll = "
-						+ roll);
+				remote.updateRemot(throttle, yaw, pitch, roll);
+				// logAndToast("Message Received:\n Throttle = " + throttle
+				// + ", Yaw = " + yaw + ", Pitch = " + pitch + ", Roll = "
+				// + roll);
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	// ******************* PID and Sensors Methods *****************
+	//
+	private void pidInitialize() {
+		rollController = new PID();
+		pitchController = new PID();
+		yawController = new PID();
+
+		rollController.setOutputLimits(Util.ROLL_PID_MIN, Util.ROLL_PID_MAX);
+		pitchController.setOutputLimits(Util.PITCH_PID_MIN, Util.PITCH_PID_MAX);
+		yawController.setOutputLimits(Util.YAW_PID_MIN, Util.YAW_PID_MAX);
+		rollController.SetMode(Util.AUTOMATIC);
+		pitchController.SetMode(Util.AUTOMATIC);
+		yawController.SetMode(Util.AUTOMATIC);
+		rollController.setSampleTime(Util.SAMPLETIME);
+		pitchController.setSampleTime(Util.SAMPLETIME);
+		yawController.setSampleTime(Util.SAMPLETIME);
 
 	}
+
+	private void pidCompute() {
+		rollController.Compute();
+		pitchController.Compute();
+		yawController.Compute();
+	}
+
+	/**
+	 * Runnable that calculate and read values from sensor and update output to
+	 * the motors.
+	 */
+	private Runnable pidCalculation = new Runnable() {
+		int m0;
+		int m1;
+		int m2;
+		int m3;
+
+		@Override
+		public void run() {
+			while (!isStopped) {
+				double[] imuAngles = imu.getAngles();
+				pitchController.updatePID(imuAngles[0],
+						pitchController.getOutput(), remote.getPitch(), 5.0,
+						0.0, 0.0, Util.DIRECT); // X
+				rollController.updatePID(imuAngles[1],
+						rollController.getOutput(), remote.getRoll(), 7.0, 0.0,
+						4.57, Util.DIRECT); // Y
+				yawController.updatePID(imuAngles[2],
+						yawController.getOutput(), remote.getYaw(), 1.0, 0.0,
+						0.0, Util.DIRECT); // Z
+				pidCompute();
+
+				double ratio = (double) remote.getThrottle() / 100;
+				int throttle = (int) (ratio * 1000) + 1000;
+				System.out.println(throttle + "  "
+						+ pitchController.getOutput() + "  "
+						+ rollController.getOutput() + "  "
+						+ yawController.getOutput());
+				// those values should be written to serial
+				m0 = (int) (throttle + rollController.getOutput()
+						- pitchController.getOutput() + yawController
+						.getOutput());
+				if (m0 > Util.MAX)
+					m0 = (int) Util.MAX;
+				else if (m0 < Util.MIN)
+					m0 = (int) Util.MIN;
+				m1 = (int) (throttle - rollController.getOutput()
+						- pitchController.getOutput() - yawController
+						.getOutput());
+				if (m1 > Util.MAX)
+					m1 = (int) Util.MAX;
+				else if (m1 < Util.MIN)
+					m1 = (int) Util.MIN;
+				m2 = (int) (throttle + rollController.getOutput()
+						+ pitchController.getOutput() - yawController
+						.getOutput());
+				if (m2 > Util.MAX)
+					m2 = (int) Util.MAX;
+				else if (m2 < Util.MIN)
+					m2 = (int) Util.MIN;
+				m3 = (int) (throttle - rollController.getOutput()
+						+ pitchController.getOutput() + yawController
+						.getOutput());
+
+				if (m3 > Util.MAX)
+					m3 = (int) Util.MAX;
+				else if (m3 < Util.MIN)
+					m3 = (int) Util.MIN;
+
+				Log.d("", " " + m0 + ", " + m1 + ", " + m2 + ", " + m3);
+				serial.sendToArduino(m0 + " " + m1 + " " + m2 + " " + m3);
+			}
+		}
+
+	};
+
 }
