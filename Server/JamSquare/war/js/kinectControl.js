@@ -18,51 +18,13 @@ var stepValue = 20;
 
 var throttle = yaw = pitch = roll = 0;
 
-function onKeyPressed(event) {
-  var key = event.which || event.keyCode;
-  switch(key) {
-    case THROTTLE_UP:
-      throttle = handleUp(throttle, 100)
-      document.getElementById("throttle").innerHTML = throttle
-      break;
-    case THROTTLE_DOWN:
-      throttle = handleDown(throttle, 0)
-      document.getElementById("throttle").innerHTML = throttle
-      break;
-    case YAW_LEFT:
-      yaw = handleDown(yaw, -100)
-      document.getElementById("yaw").innerHTML = yaw
-      break;
-    case YAW_RIGHT:
-      yaw = handleUp(yaw, 100)
-      document.getElementById("yaw").innerHTML = yaw
-      break;
-    case PITCH_UP:
-      pitch = handleUp(pitch, 100)
-      document.getElementById("pitch").innerHTML = pitch
-      break;
-    case PITCH_DOWN:
-      pitch = handleDown(pitch, -100)
-      document.getElementById("pitch").innerHTML = pitch
-      break;
-    case ROLL_LEFT:
-      roll = handleDown(roll, -100)
-      document.getElementById("roll").innerHTML = roll
-      break;
-    case ROLL_RIGHT:
-      roll = handleUp(roll, 100)
-      document.getElementById("roll").innerHTML = roll
-      break;
-  }
-
-  var msg = JSON.stringify({
+  /*var msg = JSON.stringify({
     "throttle" : throttle,
     "yaw" : yaw,
     "pitch" : pitch,
     "roll" : roll
   });
-  sendChannelMessage(msg)
-}
+  sendChannelMessage(msg)*/
 
 function handleUp(val, max) {
   if(val + stepValue > max) {
@@ -81,3 +43,82 @@ function handleDown(val, min) {
 
   return val - stepValue;
 }
+
+var rightXPos, rightYPos, rightZPos;
+var leftXPos, leftYPos, leftZPos;
+
+$(document).ready(function () {
+	rightXPos = document.getElementById("right-XPos");
+	rightYPos = document.getElementById("right-YPos");
+	rightZPos = document.getElementById("right-ZPos");
+
+	leftXPos = document.getElementById("left-XPos");
+	leftYPos = document.getElementById("left-YPos");
+	leftZPos = document.getElementById("left-ZPos");
+	
+	// If you call this method from a client that has not called the connect or
+	// disconnect function, this function implicitly calls connect with the default
+	// parameters. The returned KinectSensor is already in a connected state; you do
+	// not need to call the connect function on this interface.
+	var sensor = Kinect.sensor(Kinect.DEFAULT_SENSOR_NAME, 
+				function (sensorToConfigure, isConnected) {
+					console.log('Sensor is connected state: ' + isConnected);
+					if(isConnected) {
+						var configuration = { 
+							"interaction" : {
+								"enabled": true,
+							},
+						 
+							"userviewer" : {
+								"enabled": true,
+								"resolution": "640x480", //320x240, 160x120, 128x96, 80x60
+								"userColors": { "engaged": 0xffffffff, "tracked": 0xffffffff },
+								"defaultUserColor": 0xffffffff, //RGBA
+							},
+
+							"skeleton" : {
+								"enabled": true,
+							},
+						 
+							"sensorStatus" : {
+								"enabled": true,
+							}
+						};
+					  
+						sensorToConfigure.postConfig( configuration );
+					}
+				});
+	//			
+	sensor.addStreamFrameHandler( function(frame) {
+		switch (frame.stream) {
+			case Kinect.SKELETON_STREAM_NAME:
+				for (var i = 0; i < uiAdapter.handPointers.length; ++i) {
+					var handPointer = uiAdapter.handPointers[i];
+					
+					// Left Hand
+					if(handPointer.handType == "left") {
+						leftXPos.innerHTML = handPointer.rawX.toFixed(2)
+						leftYPos.innerHTML = handPointer.rawY.toFixed(2)
+						leftZPos.innerHTML = handPointer.rawZ.toFixed(2)
+					} else if (handPointer.handType == "right") {
+						// Right hand
+						rightXPos.innerHTML = handPointer.rawX.toFixed(2)
+						rightYPos.innerHTML = handPointer.rawY.toFixed(2)
+						rightZPos.innerHTML = handPointer.rawZ.toFixed(2)
+					}
+				}
+				
+			break;
+		}
+	});
+
+	// Create a UI adapter for the hand cursor and Kinect buttons.
+	var uiAdapter = KinectUI.createAdapter(sensor);
+
+	// Hook up DOM elements that are annotated with the "kinect-button" class to 
+	// allow them to be pressed by Kinect interactions.
+	uiAdapter.promoteButtons();
+
+	// Create a HandPointerCursor interface that can display or hide the user's hand cursor.
+	//var cursor = uiAdapter.createDefaultCursor();
+});
