@@ -29,6 +29,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class CallActivity extends Activity {
@@ -68,10 +69,21 @@ public class CallActivity extends Activity {
 
 	private boolean isStopped;
 
+	// Motors UI Value
+	// TODO(houssainy) Remove UI elements
+	private TextView motor0, motor1, motor2, motor3;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.webview_activity);
+
+		// TODO(houssiany)
+		motor0 = (TextView) findViewById(R.id.motor0);
+		motor1 = (TextView) findViewById(R.id.motor1);
+		motor2 = (TextView) findViewById(R.id.motor2);
+		motor3 = (TextView) findViewById(R.id.motor3);
+		//
 
 		initializaPeerConnectionParameters();
 
@@ -486,9 +498,10 @@ public class CallActivity extends Activity {
 				int roll = json.getInt("roll");
 
 				remote.updateRemot(throttle, yaw, pitch, roll);
-				// logAndToast("Message Received:\n Throttle = " + throttle
-				// + ", Yaw = " + yaw + ", Pitch = " + pitch + ", Roll = "
-				// + roll);
+
+				logAndToast("Message Received:\n Throttle = " + throttle
+						+ ", Yaw = " + yaw + ", Pitch = " + pitch + ", Roll = "
+						+ roll);
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
@@ -524,11 +537,11 @@ public class CallActivity extends Activity {
 	 * Runnable that calculate and read values from sensor and update output to
 	 * the motors.
 	 */
+	private int m0;
+	private int m1;
+	private int m2;
+	private int m3;
 	private Runnable pidCalculation = new Runnable() {
-		int m0;
-		int m1;
-		int m2;
-		int m3;
 
 		@Override
 		public void run() {
@@ -538,8 +551,8 @@ public class CallActivity extends Activity {
 						pitchController.getOutput(), remote.getPitch(), 5.0,
 						0.0, 0.0, Util.DIRECT); // X
 				rollController.updatePID(imuAngles[1],
-						rollController.getOutput(), remote.getRoll(), 7.0, 0.0,
-						4.57, Util.DIRECT); // Y
+						rollController.getOutput(), remote.getRoll(), 5.0, 0.0,
+						0.0, Util.DIRECT); // Y
 				yawController.updatePID(imuAngles[2],
 						yawController.getOutput(), remote.getYaw(), 1.0, 0.0,
 						0.0, Util.DIRECT); // Z
@@ -583,7 +596,18 @@ public class CallActivity extends Activity {
 					m3 = (int) Util.MIN;
 
 				Log.d("", " " + m0 + ", " + m1 + ", " + m2 + ", " + m3);
-				serial.sendToArduino(m0 + " " + m1 + " " + m2 + " " + m3);
+				serial.sendToArduino(m0 + " " + m1 + " " + m2 + " " + m3 + " ");
+
+				runOnUiThread(new Runnable() {
+
+					@Override
+					public void run() {
+						motor0.setText(m0 + "");
+						motor1.setText(m1 + "");
+						motor2.setText(m2 + "");
+						motor3.setText(m3 + "");
+					}
+				});
 			}
 		}
 

@@ -6,7 +6,7 @@ public final class Util {
 	public final static int DIRECT = 0;
 	public final static int REVERSE = 1;
 	public final static int SAMPLETIME = 10;
-	public final static double MIN = 1150.0;
+	public final static double MIN = 1000.0;
 	public final static double MAX = 2000.0;
 
 	public final static double ROLL_PID_MIN = -200.0;
