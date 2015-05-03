@@ -96,11 +96,11 @@ $(document).ready(function () {
 					var handPointer = uiAdapter.handPointers[i];
 					
 					// Left Hand
-					if(handPointer.handType == "left") {
+					if(handPointer.handType == "Left") {
 						leftXPos.innerHTML = handPointer.rawX.toFixed(2)
 						leftYPos.innerHTML = handPointer.rawY.toFixed(2)
 						leftZPos.innerHTML = handPointer.rawZ.toFixed(2)
-					} else if (handPointer.handType == "right") {
+					} else if (handPointer.handType == "Right") {
 						// Right hand
 						rightXPos.innerHTML = handPointer.rawX.toFixed(2)
 						rightYPos.innerHTML = handPointer.rawY.toFixed(2)
