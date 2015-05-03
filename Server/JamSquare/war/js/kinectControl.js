@@ -53,8 +53,8 @@ $(document).ready(function () {
 						rightYPos.innerHTML = handPointer.rawY.toFixed(2)
 						rightZPos.innerHTML = handPointer.rawZ.toFixed(2)
 						
-						if(state == "throttleOff"" && handPointer.rawY.toFixed(2) < -0.80) {
-						  state = "throttleOn"";
+						if(state == "throttleOff" && handPointer.rawY.toFixed(2) < -0.80) {
+						  state = "throttleOn";
 						  var msg = JSON.stringify({
 							"throttle" : 20,
 							"yaw" : 0,
@@ -62,8 +62,8 @@ $(document).ready(function () {
 							"roll" : 0
 						  });
 						  sendChannelMessage(msg);
-						} else if(state == "throttleOn""){
-							state = "throttleOff"";
+						} else if(state == "throttleOn"){
+						  state = "throttleOff";
 						  var msg = JSON.stringify({
 							"throttle" : 0,
 							"yaw" : 0,
