@@ -62,7 +62,7 @@ $(document).ready(function () {
 							"roll" : 0
 						  });
 						  sendChannelMessage(msg);
-						} else if(state == "throttleOn" && && handPointer.rawY.toFixed(2) > -1.00){
+						} else if(state == "throttleOn" && handPointer.rawY.toFixed(2) > -1.00){
 						  state = "throttleOff";
 						  var msg = JSON.stringify({
 							"throttle" : 0,
