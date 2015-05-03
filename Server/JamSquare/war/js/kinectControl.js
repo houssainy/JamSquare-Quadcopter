@@ -4,7 +4,7 @@
 var rightXPos, rightYPos, rightZPos;
 var leftXPos, leftYPos, leftZPos;
 
-var state = "throttleOn"
+var state = "throttleOff"
 
 $(document).ready(function () {
 	rightXPos = document.getElementById("right-XPos");
@@ -53,7 +53,7 @@ $(document).ready(function () {
 						rightYPos.innerHTML = handPointer.rawY.toFixed(2)
 						rightZPos.innerHTML = handPointer.rawZ.toFixed(2)
 						
-						if(state == "throttleOff" && handPointer.rawY.toFixed(2) < -0.80) {
+						if(state == "throttleOff" && handPointer.rawY.toFixed(2) < -1.00) {
 						  state = "throttleOn";
 						  var msg = JSON.stringify({
 							"throttle" : 20,
