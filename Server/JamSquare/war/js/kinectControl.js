@@ -1,49 +1,6 @@
 // Copyright (c) 2015 Jam^2 project authors. All Rights Reserved.
 //
 
-// Constants
-// Left controller
-var THROTTLE_UP = 119; // w
-var THROTTLE_DOWN = 115; // s
-var YAW_LEFT = 97; // a
-var YAW_RIGHT = 100; // d
-
-// Right controller
-var PITCH_UP = 111; // o
-var PITCH_DOWN = 108; // l
-var ROLL_LEFT = 107; // k
-var ROLL_RIGHT = 59; // ;
-
-var stepValue = 20;
-
-var throttle = yaw = pitch = roll = 0;
-
-  /*var msg = JSON.stringify({
-    "throttle" : throttle,
-    "yaw" : yaw,
-    "pitch" : pitch,
-    "roll" : roll
-  });
-  sendChannelMessage(msg)*/
-
-function handleUp(val, max) {
-  if(val + stepValue > max) {
-    console.log("Maximum Value Reached")
-    return val;
-  }
-
-  return val + stepValue;
-}
-
-function handleDown(val, min) {
-  if(val - stepValue < min) {
-    console.log("Minimum Value Reached")
-    return val;
-  }
-
-  return val - stepValue;
-}
-
 var rightXPos, rightYPos, rightZPos;
 var leftXPos, leftYPos, leftZPos;
 
@@ -65,22 +22,7 @@ $(document).ready(function () {
 					console.log('Sensor is connected state: ' + isConnected);
 					if(isConnected) {
 						var configuration = { 
-							"interaction" : {
-								"enabled": true,
-							},
-						 
-							"userviewer" : {
-								"enabled": true,
-								"resolution": "640x480", //320x240, 160x120, 128x96, 80x60
-								"userColors": { "engaged": 0xffffffff, "tracked": 0xffffffff },
-								"defaultUserColor": 0xffffffff, //RGBA
-							},
-
 							"skeleton" : {
-								"enabled": true,
-							},
-						 
-							"sensorStatus" : {
 								"enabled": true,
 							}
 						};
