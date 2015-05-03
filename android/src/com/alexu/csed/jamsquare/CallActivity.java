@@ -560,42 +560,50 @@ public class CallActivity extends Activity {
 
 				double ratio = (double) remote.getThrottle() / 100;
 				int throttle = (int) (ratio * 1000) + 1000;
-				System.out.println(throttle + "  "
-						+ pitchController.getOutput() + "  "
-						+ rollController.getOutput() + "  "
-						+ yawController.getOutput());
+				// System.out.println(throttle + "  "
+				// + pitchController.getOutput() + "  "
+				// + rollController.getOutput() + "  "
+				// + yawController.getOutput());
 				// those values should be written to serial
-				m0 = (int) (throttle + rollController.getOutput()
-						- pitchController.getOutput() + yawController
-						.getOutput());
+				m0 = (int) (throttle
+				// + rollController.getOutput()
+				// - pitchController.getOutput() + yawController
+				// .getOutput()
+				);
 				if (m0 > Util.MAX)
 					m0 = (int) Util.MAX;
 				else if (m0 < Util.MIN)
 					m0 = (int) Util.MIN;
-				m1 = (int) (throttle - rollController.getOutput()
-						- pitchController.getOutput() - yawController
-						.getOutput());
+				m1 = (int) (throttle
+				// - rollController.getOutput()
+				// - pitchController.getOutput() - yawController
+				// .getOutput()
+				);
 				if (m1 > Util.MAX)
 					m1 = (int) Util.MAX;
 				else if (m1 < Util.MIN)
 					m1 = (int) Util.MIN;
-				m2 = (int) (throttle + rollController.getOutput()
-						+ pitchController.getOutput() - yawController
-						.getOutput());
+				m2 = (int) (throttle
+				// + rollController.getOutput()
+				// + pitchController.getOutput() - yawController
+				// .getOutput()
+				);
 				if (m2 > Util.MAX)
 					m2 = (int) Util.MAX;
 				else if (m2 < Util.MIN)
 					m2 = (int) Util.MIN;
-				m3 = (int) (throttle - rollController.getOutput()
-						+ pitchController.getOutput() + yawController
-						.getOutput());
+				m3 = (int) (throttle
+				// - rollController.getOutput()
+				// + pitchController.getOutput() + yawController
+				// .getOutput()
+				);
 
 				if (m3 > Util.MAX)
 					m3 = (int) Util.MAX;
 				else if (m3 < Util.MIN)
 					m3 = (int) Util.MIN;
 
-				Log.d("", " " + m0 + ", " + m1 + ", " + m2 + ", " + m3);
+				// Log.d("", " " + m0 + ", " + m1 + ", " + m2 + ", " + m3);
 				serial.sendToArduino(m0 + " " + m1 + " " + m2 + " " + m3 + " ");
 
 				runOnUiThread(new Runnable() {
