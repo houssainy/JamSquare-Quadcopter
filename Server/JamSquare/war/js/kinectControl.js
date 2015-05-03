@@ -4,6 +4,8 @@
 var rightXPos, rightYPos, rightZPos;
 var leftXPos, leftYPos, leftZPos;
 
+var state = "throttleOn"
+
 $(document).ready(function () {
 	rightXPos = document.getElementById("right-XPos");
 	rightYPos = document.getElementById("right-YPos");
@@ -47,6 +49,27 @@ $(document).ready(function () {
 						rightXPos.innerHTML = handPointer.rawX.toFixed(2)
 						rightYPos.innerHTML = handPointer.rawY.toFixed(2)
 						rightZPos.innerHTML = handPointer.rawZ.toFixed(2)
+						
+						if(state == "throttleOff"" && handPointer.rawY.toFixed(2) < -0.80) {
+						  state = "throttleOn"";
+						  var msg = JSON.stringify({
+							"throttle" : 20,
+							"yaw" : 0,
+							"pitch" : 0,
+							"roll" : 0
+						  });
+						  sendChannelMessage(msg);
+						} else if(state == "throttleOn""){
+							state = "throttleOff"";
+						  var msg = JSON.stringify({
+							"throttle" : 0,
+							"yaw" : 0,
+							"pitch" : 0,
+							"roll" : 0
+						  });
+						  sendChannelMessage(msg);
+						}
+						
 					}
 				}
 				
