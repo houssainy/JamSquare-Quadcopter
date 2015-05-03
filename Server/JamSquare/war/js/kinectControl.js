@@ -23,7 +23,10 @@ $(document).ready(function () {
 				function (sensorToConfigure, isConnected) {
 					console.log('Sensor is connected state: ' + isConnected);
 					if(isConnected) {
-						var configuration = { 
+						var configuration = {
+							"interaction" : {
+								"enabled": true,
+							},						
 							"skeleton" : {
 								"enabled": true,
 							}
