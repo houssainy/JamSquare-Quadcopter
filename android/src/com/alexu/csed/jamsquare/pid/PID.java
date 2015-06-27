@@ -54,7 +54,7 @@ public class PID {
 			return false;
 		long now = System.currentTimeMillis();
 		long timeChange = (now - lastTime);
-		System.out.println(timeChange + "  " + sampleTime);
+//		System.out.println(timeChange + "  " + sampleTime);
 		if (timeChange >= sampleTime) {
 			/* Compute all the working error variables */
 			double error = pidSetpoint - pidInput;

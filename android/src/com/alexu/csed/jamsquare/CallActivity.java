@@ -492,16 +492,24 @@ public class CallActivity extends Activity {
 
 			try {
 				JSONObject json = new JSONObject(new String(msgBytes));
-				int throttle = json.getInt("throttle");
-				int yaw = json.getInt("yaw");
-				int pitch = json.getInt("pitch");
-				int roll = json.getInt("roll");
+				if (json.has("p")) {
+					p = json.getDouble("p");
+					i = json.getDouble("i");
+					d = json.getDouble("d");
+					logAndToast("Updating PID Values:\n p = " + p + ", I = "
+							+ i + ", D = " + d);
+				} else {
+					int throttle = json.getInt("throttle");
+					int yaw = json.getInt("yaw");
+					int pitch = json.getInt("pitch");
+					int roll = json.getInt("roll");
 
-				remote.updateRemot(throttle, yaw, pitch, roll);
+					remote.updateRemot(throttle, yaw, pitch, roll);
 
-				logAndToast("Message Received:\n Throttle = " + throttle
-						+ ", Yaw = " + yaw + ", Pitch = " + pitch + ", Roll = "
-						+ roll);
+					// logAndToast("Message Received:\n Throttle = " + throttle
+					// + ", Yaw = " + yaw + ", Pitch = " + pitch
+					// + ", Roll = " + roll);
+				}
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
@@ -541,6 +549,10 @@ public class CallActivity extends Activity {
 	private int m1;
 	private int m2;
 	private int m3;
+
+	private double p = 0;
+	private double i = 0;
+	private double d = 0;
 	private Runnable pidCalculation = new Runnable() {
 
 		@Override
@@ -548,14 +560,13 @@ public class CallActivity extends Activity {
 			while (!isStopped) {
 				double[] imuAngles = imu.getAngles();
 				pitchController.updatePID(imuAngles[0],
-						pitchController.getOutput(), remote.getPitch(), 5.0,
-						0.0, 0.0, Util.DIRECT); // X
+						pitchController.getOutput(), remote.getPitch(), p, i,
+						d, Util.DIRECT); // X
 				rollController.updatePID(imuAngles[1],
-						rollController.getOutput(), remote.getRoll(), 5.0, 0.0,
-						0.0, Util.DIRECT); // Y
-				yawController.updatePID(imuAngles[2],
-						yawController.getOutput(), remote.getYaw(), 1.0, 0.0,
-						0.0, Util.DIRECT); // Z
+						rollController.getOutput(), remote.getRoll(), p, i, d,
+						Util.DIRECT); // Y
+				yawController.updatePID(imuAngles[2], yawController.getOutput(),
+						remote.getYaw(), 1.0, 0.0, 0.0, Util.DIRECT); // Z
 				pidCompute();
 
 				double ratio = (double) remote.getThrottle() / 100;
@@ -565,46 +576,54 @@ public class CallActivity extends Activity {
 				// + rollController.getOutput() + "  "
 				// + yawController.getOutput());
 				// those values should be written to serial
-				m0 = (int) (throttle
-				// + rollController.getOutput()
-				// - pitchController.getOutput() + yawController
-				// .getOutput()
-				);
+				m0 = (int) (throttle + rollController.getOutput() - pitchController
+						.getOutput() /*
+									 * + yawController .getOutput()
+									 */);
 				if (m0 > Util.MAX)
 					m0 = (int) Util.MAX;
 				else if (m0 < Util.MIN)
 					m0 = (int) Util.MIN;
-				m1 = (int) (throttle
-				// - rollController.getOutput()
-				// - pitchController.getOutput() - yawController
-				// .getOutput()
-				);
+
+				m1 = (int) (throttle - rollController.getOutput() - pitchController
+						.getOutput() /*- yawController
+										.getOutput()*/);
 				if (m1 > Util.MAX)
 					m1 = (int) Util.MAX;
 				else if (m1 < Util.MIN)
 					m1 = (int) Util.MIN;
-				m2 = (int) (throttle
-				// + rollController.getOutput()
-				// + pitchController.getOutput() - yawController
-				// .getOutput()
-				);
+
+				m2 = (int) (throttle + rollController.getOutput() + pitchController
+						.getOutput() /*- yawController
+										.getOutput()*/);
 				if (m2 > Util.MAX)
 					m2 = (int) Util.MAX;
 				else if (m2 < Util.MIN)
 					m2 = (int) Util.MIN;
-				m3 = (int) (throttle
-				// - rollController.getOutput()
-				// + pitchController.getOutput() + yawController
-				// .getOutput()
-				);
 
+				m3 = (int) (throttle - rollController.getOutput() + pitchController
+						.getOutput() /*
+									 * + yawController .getOutput()
+									 */);
 				if (m3 > Util.MAX)
 					m3 = (int) Util.MAX;
 				else if (m3 < Util.MIN)
 					m3 = (int) Util.MIN;
 
 				// Log.d("", " " + m0 + ", " + m1 + ", " + m2 + ", " + m3);
-				serial.sendToArduino(m0 + " " + m1 + " " + m2 + " " + m3 + " ");
+				// serial.sendToArduino(m0 + " " + m1 + " " + m2 + " " + m3 +
+				// " ");
+				m0 = (m0 - 1000) / 5;
+				m1 = (m1 - 1000) / 5;
+				m2 = (m2 - 1000) / 5;
+				m3 = (m3 - 1000) / 5;
+
+				byte[] data = new byte[4];
+				data[0] = (byte) m0;
+				data[1] = (byte) m1;
+				data[2] = (byte) m2;
+				data[3] = (byte) m3;
+				serial.sendToArduino(data);
 
 				runOnUiThread(new Runnable() {
 
@@ -616,6 +635,12 @@ public class CallActivity extends Activity {
 						motor3.setText(m3 + "");
 					}
 				});
+				try {
+					Thread.sleep(2);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 

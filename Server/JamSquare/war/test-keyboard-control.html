@@ -1,0 +1,32 @@
+<!-- Copyright (c) 2015 Jam^2 project authors. All Rights Reserved. -->
+<html>
+<head>
+  <title>Jam^2 Keyboard</title>
+	
+  <script type="text/javascript" src="/_ah/channel/jsapi"></script>
+  
+  <script src="js/jquery.min.js"></script>
+  <script type="text/javascript" src="js/webRtcCall.js"></script> 
+  <script type="text/javascript" src="js/test-control.js"></script> 
+
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body onkeypress="onKeyPressed(event)">
+  <div id="container">
+
+  	<h1><a href="https://github.com/houssainy/JamSquare-Quadcopter">Jam^2 Quadcopter</a> <span>KeyBoard Web Controller</span></h1>
+  	<span id='status'>Not Connected</span>
+
+    <video id="remoteView" autoplay="true" muted="false" width="640" height="480"></video>
+
+    Throttle: <span id="throttle">0</span> , Yaw: <span id="yaw">0</span>, Pitch: <span id="pitch">0</span>, Roll: <span id="roll">0</span>
+
+    <h1></h1>
+  </div>
+    
+  P = <input type="text" id="p" value="0.0"><br>
+  I = <input type="text" id="i" value="0.0"><br>
+  D = <input type="text" id="d" value="0.0"><br>
+  
+</body>
+</html>

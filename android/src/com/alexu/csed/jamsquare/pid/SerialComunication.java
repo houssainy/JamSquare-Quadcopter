@@ -29,7 +29,7 @@ public class SerialComunication {
 				// open the device
 				device.open();
 				// set the communication speed
-				device.setBaudRate(115200); // make sure this matches your
+				device.setBaudRate(9600); // make sure this matches your
 											// device's setting!
 			} catch (IOException err) {
 				Log.e(TAG, "Error setting up USB device: " + err.getMessage(),
@@ -44,7 +44,6 @@ public class SerialComunication {
 				return;
 			}
 		}
-
 	}
 
 	public void unRegister() {
@@ -60,8 +59,8 @@ public class SerialComunication {
 		}
 	}
 
-	public void sendToArduino(String data) {
-		byte[] dataToSend = data.getBytes();
+	public void sendToArduino(byte[] dataToSend) {
+		// byte[] dataToSend = data.getBytes();
 		// send the color to the serial device
 		if (device != null) {
 			try {

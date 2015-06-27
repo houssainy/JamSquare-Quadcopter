@@ -14,13 +14,17 @@ public class IMU implements SensorEventListener {
 	private float[] mGravity;
 	private float[] mGeomagnetic;
 	private double[] output = { 0, 0, 0 };
+	private float[] initvalue;
+	private boolean isInitialze = false;
 
 	public IMU(Context context) {
-		mSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+		mSensorManager = (SensorManager) context
+				.getSystemService(Context.SENSOR_SERVICE);
 		accelerometer = mSensorManager
 				.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-		magnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-//		registerSensors();
+		magnetometer = mSensorManager
+				.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+		// registerSensors();
 	}
 
 	public double[] getAngles() {
@@ -59,10 +63,13 @@ public class IMU implements SensorEventListener {
 			if (success) {
 				float orientation[] = new float[3];
 				SensorManager.getOrientation(newR, orientation);
-
-				output[0] =  Math.toDegrees(orientation[1]);
-				output[1] =  Math.toDegrees(orientation[2]);
-				output[2] = Math.toDegrees(orientation[0]);
+				if (!isInitialze) {
+					initvalue = orientation;
+					isInitialze = true;
+				}
+				output[0] = Math.toDegrees(orientation[1] /*- initvalue[1]*/);
+				output[1] = Math.toDegrees(orientation[2] /*- initvalue[2]*/);
+				output[2] = Math.toDegrees(orientation[0] /*- initvalue[0]*/);
 
 			}
 		}
