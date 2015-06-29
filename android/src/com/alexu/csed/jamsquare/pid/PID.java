@@ -5,38 +5,22 @@ public class PID {
 	double kp; // * (P)ropotional Tuning Parameter
 	double ki; // * (I)ntegral Tuning Parameter
 	double kd; // * (D)erivative Tuning Parameter
-	// we'll hold on to the tuning parameters in user-entered
-	// format for display purposes
-	private double dispKp;
-	private double dispKi;
-	private double dispKd;
-	private int controllerDirection;
+
 	// the nxt variables are for storing the current states for PID
 	private double pidInput;
 	private double pidOutput;
 	private double pidSetpoint;
-	private long lastTime;
-	private double iTerm, lastInput;
-	private long sampleTime;
+	private double iState = 0, lastInput;
 	private double outMin, outMax;
-	private boolean inAuto;
 
-	public void updatePID(double input, double output, double setpoint,
-			double kp, double ki, double kd, int direction) {
-		pidOutput = output;
+	public void updatePID(double input, double setpoint,
+			double kp, double ki, double kd) {
 		pidInput = input;
 		pidSetpoint = setpoint;
-		if (getMode() != Util.AUTOMATIC)
-			inAuto = false;
-		else
-			inAuto = true;
-		// default output limit corresponds to the arduino pwm limits
-		// setOutputLimits(1000, 2000);
-		// default Controller Sample Time is 0.1 seconds
-		sampleTime = 100;
-		setControllerDirection(direction);
-		setTunings(kp, ki, kd);
-		lastTime = System.currentTimeMillis() - sampleTime;
+		this.kp = kp;
+		this.ki = ki;
+		this.kd = kd;
+
 	}
 
 	/*
@@ -49,73 +33,26 @@ public class PID {
 	 * has been done.
 	 * ***************************************************************
 	 */
-	public boolean Compute() {
-		if (!inAuto)
-			return false;
-		long now = System.currentTimeMillis();
-		long timeChange = (now - lastTime);
-//		System.out.println(timeChange + "  " + sampleTime);
-		if (timeChange >= sampleTime) {
-			/* Compute all the working error variables */
-			double error = pidSetpoint - pidInput;
-			iTerm += (ki * error);
-			if (iTerm > outMax)
-				iTerm = outMax;
-			else if (iTerm < outMin)
-				iTerm = outMin;
-			double dInput = (pidInput - lastInput);
-			/* Compute PID Output */
-			pidOutput = kp * error + iTerm - kd * dInput;
-			if (pidOutput > outMax)
-				pidOutput = outMax;
-			else if (pidOutput < outMin)
-				pidOutput = outMin;
-			// Remember some variables for next time.
-			lastInput = pidInput;
-			lastTime = now;
-			return true;
-		} else {
-			return false;
-		}
-	}
+	public void Compute() {
 
-	/*
-	 * setTunings(...)***********************************************************
-	 * ** This function allows the controller's dynamic performance to be
-	 * adjusted. it's called automatically from the constructor, but tunings can
-	 * also be adjusted on the fly during normal operation
-	 * ************************************************************************
-	 */
-	public void setTunings(double _kp, double _ki, double _kd) {
-		if (_kp < 0 || _ki < 0 || _kd < 0)
-			return;
-		dispKp = _kp;
-		dispKi = _ki;
-		dispKd = _kd;
-		double sampleTimeInSec = ((double) sampleTime) / 1000;
-		kp = _kp;
-		ki = _ki * sampleTimeInSec;
-		kd = _kd / sampleTimeInSec;
-		if (controllerDirection == Util.REVERSE) {
-			kp = (0 - kp);
-			ki = (0 - ki);
-			kd = (0 - kd);
-		}
-	}
+		/* Compute all the working error variables */
+		double error = pidSetpoint - pidInput;
+		iState += error;
+		if (iState> outMax)
+			iState = outMax;
+		else if (iState< outMin)
+			iState = outMin;
+		double iTerm = (ki * iState);
+		double dInput = (pidInput - lastInput);
+		/* Compute PID Output */
+		pidOutput = kp * error + iTerm - kd * dInput;
+		if (pidOutput > outMax)
+			pidOutput = outMax;
+		else if (pidOutput < outMin)
+			pidOutput = outMin;
+		// Remember some variables for next time.
+		lastInput = pidInput;
 
-	/*
-	 * setSampleTime(...)
-	 * ********************************************************* sets the
-	 * period, in Milliseconds, at which the calculation is performed.
-	 * ****************************************************************
-	 */
-	public void setSampleTime(int newSampleTime) {
-		if (newSampleTime > 0) {
-			double ratio = (double) newSampleTime / (double) sampleTime;
-			ki *= ratio;
-			kd /= ratio;
-			sampleTime = (long) newSampleTime;
-		}
 	}
 
 	/*
@@ -133,97 +70,17 @@ public class PID {
 			return;
 		outMin = min;
 		outMax = max;
-		if (inAuto) {
-			if (pidOutput > outMax)
-				pidOutput = outMax;
-			else if (pidOutput < outMin)
-				pidOutput = outMin;
 
-			if (iTerm > outMax)
-				iTerm = outMax;
-			else if (iTerm < outMin)
-				iTerm = outMin;
-		}
-	}
+		if (pidOutput > outMax)
+			pidOutput = outMax;
+		else if (pidOutput < outMin)
+			pidOutput = outMin;
 
-	/*
-	 * SetMode(...)**************************************************************
-	 * ** Allows the controller Mode to be set to manual (0) or Automatic
-	 * (non-zero) when the transition from manual to auto occurs, the controller
-	 * is automatically initialized
-	 * **********************************************
-	 * ******************************
-	 */
-	public void SetMode(int mode) {
-		boolean newAuto = (mode == Util.AUTOMATIC);
-		if (newAuto == !inAuto) { // we just went from manual to auto
-			Initialize();
-		}
-		inAuto = newAuto;
-	}
+		if (iState > outMax)
+			iState = outMax;
+		else if (iState < outMin)
+			iState = outMin;
 
-	/*
-	 * Initialize()**************************************************************
-	 * ** does all the things that need to happen to ensure a bumbles transfer
-	 * from manual to automatic mode. We should call it before beginning with
-	 * the automatic mode
-	 * ********************************************************
-	 */
-	private void Initialize() {
-		iTerm = pidOutput;
-		lastInput = pidInput;
-		if (iTerm > outMax)
-			iTerm = outMax;
-		else if (iTerm < outMin)
-			iTerm = outMin;
-	}
-
-	/*
-	 * SetControllerDirection(...)***********************************************
-	 * ** The PID will either be connected to a DIRECT acting process (+Output
-	 * leads to +Input) or a REVERSE acting process(+Output leads to -Input.) we
-	 * need to know which one, because otherwise we may increase the output when
-	 * we should be decreasing.This mode depends on the motors calibration
-	 * state. This is called from the constructor.
-	 * *******************************
-	 * *********************************************
-	 */
-	public void setControllerDirection(int direction) {
-		if (inAuto && direction != controllerDirection) {
-			kp = (0 - kp);
-			ki = (0 - ki);
-			kd = (0 - kd);
-		}
-		controllerDirection = direction;
-	}
-
-	/*
-	 * Status
-	 * Functions*************************************************************
-	 * Just because you set the Kp=-1 doesn't mean it actually happened. these
-	 * functions query the internal state of the PID. they're here for display
-	 * purposes. this are the functions the PID Front-end uses for example
-	 * *******
-	 * *********************************************************************
-	 */
-	public double getKp() {
-		return dispKp;
-	}
-
-	public double getKi() {
-		return dispKi;
-	}
-
-	public double getKd() {
-		return dispKd;
-	}
-
-	public int getMode() {
-		return inAuto ? Util.AUTOMATIC : Util.MANUAL;
-	}
-
-	public int getDirection() {
-		return controllerDirection;
 	}
 
 	public double getOutput() {

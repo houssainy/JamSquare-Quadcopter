@@ -526,12 +526,6 @@ public class CallActivity extends Activity {
 		rollController.setOutputLimits(Util.ROLL_PID_MIN, Util.ROLL_PID_MAX);
 		pitchController.setOutputLimits(Util.PITCH_PID_MIN, Util.PITCH_PID_MAX);
 		yawController.setOutputLimits(Util.YAW_PID_MIN, Util.YAW_PID_MAX);
-		rollController.SetMode(Util.AUTOMATIC);
-		pitchController.SetMode(Util.AUTOMATIC);
-		yawController.SetMode(Util.AUTOMATIC);
-		rollController.setSampleTime(Util.SAMPLETIME);
-		pitchController.setSampleTime(Util.SAMPLETIME);
-		yawController.setSampleTime(Util.SAMPLETIME);
 
 	}
 
@@ -559,14 +553,14 @@ public class CallActivity extends Activity {
 		public void run() {
 			while (!isStopped) {
 				double[] imuAngles = imu.getAngles();
-				pitchController.updatePID(imuAngles[0],
-						pitchController.getOutput(), remote.getPitch(), p, i,
-						d, Util.DIRECT); // X
+				pitchController
+						.updatePID(imuAngles[0], pitchController.getOutput(),
+								remote.getPitch(), p, i, d); // X
 				rollController.updatePID(imuAngles[1],
-						rollController.getOutput(), remote.getRoll(), p, i, d,
-						Util.DIRECT); // Y
-				yawController.updatePID(imuAngles[2], yawController.getOutput(),
-						remote.getYaw(), 1.0, 0.0, 0.0, Util.DIRECT); // Z
+						rollController.getOutput(), remote.getRoll(), p, i, d); // Y
+				yawController.updatePID(imuAngles[2],
+						yawController.getOutput(), remote.getYaw(), 1.0, 0.0,
+						0.0); // Z
 				pidCompute();
 
 				double ratio = (double) remote.getThrottle() / 100;
