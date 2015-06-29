@@ -15,4 +15,6 @@ public final class Util {
 	public final static double PITCH_PID_MAX = 200.0;
 	public final static double YAW_PID_MIN = -100.0;
 	public final static double YAW_PID_MAX = 100.0;
+	final static int ROLL_ANGLE_MAX = 45;
+	final static int PITCH_ANGLE_MAX = 45;
 }

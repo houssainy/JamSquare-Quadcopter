@@ -24,21 +24,6 @@ public class RemotControl {
 		this.roll = roll;
 		}
 	
-	public void setThrottle(int throttle) {
-		this.throttle = throttle;
-	}
-
-	public void setRoll(int roll) {
-		this.roll = roll;
-	}
-	
-	public void setYaw(int yaw) {
-		this.yaw = yaw;
-	}
-	
-	public void setPitch(int pitch) {
-		this.pitch = pitch;
-	}
 	
 	public int getThrottle() {
 		return throttle;
