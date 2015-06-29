@@ -42,7 +42,7 @@ public class PID {
 			iState = outMax;
 		else if (iState< outMin)
 			iState = outMin;
-		double iTerm = (ki * iState);
+		double iTerm = ki * iState;
 		double dInput = (pidInput - lastInput);
 		/* Compute PID Output */
 		pidOutput = kp * error + iTerm - kd * dInput;

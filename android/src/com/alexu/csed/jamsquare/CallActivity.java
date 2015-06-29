@@ -556,7 +556,7 @@ public class CallActivity extends Activity {
 				pitchController.updatePID(imuAngles[0], remote.getPitch(), p,
 						i, d); // X
 				rollController.updatePID(imuAngles[1],
-						rollController.getOutput(), p, i, d); // Y
+						remote.getRoll(), p, i, d); // Y
 				yawController.updatePID(imuAngles[2], remote.getYaw(), 1.0,
 						0.0, 0.0); // Z
 				pidCompute();
