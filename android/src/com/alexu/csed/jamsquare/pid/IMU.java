@@ -67,8 +67,8 @@ public class IMU implements SensorEventListener {
 					initvalue = orientation;
 					isInitialze = true;
 				}
-				output[0] = Math.toDegrees(orientation[1] /*- initvalue[1]*/);
-				output[1] = Math.toDegrees(orientation[2] /*- initvalue[2]*/);
+				output[0] = Math.toDegrees(orientation[1] - initvalue[1]);
+				output[1] = Math.toDegrees(orientation[2] - initvalue[2]);
 				output[2] = Math.toDegrees(orientation[0] /*- initvalue[0]*/);
 
 			}
