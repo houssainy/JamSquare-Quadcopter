@@ -23,7 +23,7 @@ var I_DOWN = 52; // 4
 var D_UP = 53; // 5
 var D_DOWN = 54; // 6
 
-var stepValue = 10;
+var stepValue = 5;
 
 var throttle = yaw = pitch = roll = 0;
 
@@ -125,42 +125,42 @@ function updatePIDValues() {
 
 function upP() {
   var p = parseFloat(document.getElementById('p').value);
-  p = p + 0.5
+  p = p + 0.1
   document.getElementById('p').value = p
   updatePIDValues()
 }
 
 function downP() {
   var p = parseFloat(document.getElementById('p').value);
-  p = p - 0.5;
+  p = p - 0.1;
   document.getElementById('p').value = p
   updatePIDValues();
 }
 
 function upI() {
   var i = parseFloat(document.getElementById('i').value);
-  i = i + 0.01
+  i = i + 0.001
   document.getElementById('i').value = i
   updatePIDValues()
 }
 
 function downI() {
   var i = parseFloat(document.getElementById('i').value);
-  i = i - 0.01
+  i = i - 0.001
   document.getElementById('i').value = i
   updatePIDValues()
 }
 
 function upD() {
   var d = parseFloat(document.getElementById('d').value);
-  d = d + 0.1
+  d = d + 0.5
   document.getElementById('d').value = d
   updatePIDValues()
 }
 
 function downD() {
   var d = parseFloat(document.getElementById('d').value);
-  d = d - 0.1
+  d = d - 0.5
   document.getElementById('d').value = d
   updatePIDValues()
 }    

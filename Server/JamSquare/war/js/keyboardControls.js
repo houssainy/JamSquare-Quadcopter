@@ -14,7 +14,7 @@ var PITCH_DOWN = 108; // l
 var ROLL_LEFT = 107; // k
 var ROLL_RIGHT = 59; // ;
 
-var stepValue = 10;
+var stepValue = 5;
 
 var throttle = yaw = pitch = roll = 0;
 
